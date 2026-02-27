@@ -14,11 +14,14 @@ export default function DashboardLayout({
   searchPlaceholder = "Search patients, reports...",
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
 
   const handleNavigate = (page) => {
     if (onNavigate) onNavigate(page);
     setSidebarOpen(false);
   };
+
+  const sidebarWidthClass = collapsed ? "lg:ml-20" : "lg:ml-[18rem]";
 
   return (
     <div className="bg-slate-50 min-h-screen overflow-x-hidden">
@@ -34,6 +37,7 @@ export default function DashboardLayout({
         className={`fixed top-0 left-0 z-50 h-full transform transition-transform duration-300 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         } lg:translate-x-0`}
+        style={{ width: collapsed ? "5rem" : "18rem" }}
       >
         <Sidebar
           navItems={navItems}
@@ -42,11 +46,16 @@ export default function DashboardLayout({
           brandTitle={brandTitle}
           brandSubtitle={brandSubtitle}
           className="shadow-lg lg:shadow-none"
+          collapsed={collapsed}
+          onToggleCollapse={() => setCollapsed((v) => !v)}
+          onCloseMobile={() => setSidebarOpen(false)}
         />
       </div>
 
       {/* Main */}
-      <div className="lg:ml-64 min-h-screen flex flex-col">
+      <div
+        className={`${sidebarWidthClass} min-h-screen flex flex-col transition-[margin] duration-300`}
+      >
         <header className="h-20 bg-white/80 backdrop-blur sticky top-0 z-30 px-4 sm:px-8 flex items-center justify-between border-b border-slate-200 shadow-sm">
           <div className="flex items-center gap-4">
             <button
