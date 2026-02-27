@@ -1,50 +1,50 @@
-import React from "react";
+import React from 'react';
 
 // Risk configurations
 const riskConfig = {
   high: {
-    label: "HIGH",
-    sublabel: "RISK",
-    probability: "78%",
-    borderColor: "border-red-500",
-    bgColor: "bg-red-50",
-    textColor: "text-red-600",
-    badgeBg: "bg-red-50",
+    label: 'HIGH',
+    sublabel: 'RISK',
+    probability: '78%',
+    borderColor: 'border-red-500',
+    bgColor: 'bg-red-50',
+    textColor: 'text-red-600',
+    badgeBg: 'bg-red-50',
     message:
-      "Based on your health profile, you have a high probability of developing diabetes within the next 5-10 years. This assessment considers factors such as your BMI, family history, lifestyle patterns, and other health indicators.",
+      'Based on your health profile, you have a high probability of developing diabetes within the next 5-10 years. This assessment considers factors such as your BMI, family history, lifestyle patterns, and other health indicators.',
   },
   medium: {
-    label: "MEDIUM",
-    sublabel: "RISK",
-    probability: "45%",
-    borderColor: "border-yellow-500",
-    bgColor: "bg-yellow-50",
-    textColor: "text-yellow-600",
-    badgeBg: "bg-yellow-50",
+    label: 'MEDIUM',
+    sublabel: 'RISK',
+    probability: '45%',
+    borderColor: 'border-yellow-500',
+    bgColor: 'bg-yellow-50',
+    textColor: 'text-yellow-600',
+    badgeBg: 'bg-yellow-50',
     message:
-      "Your health profile indicates a moderate diabetes risk. Consider making lifestyle improvements and scheduling regular check-ups to monitor your progress.",
+      'Your health profile indicates a moderate diabetes risk. Consider making lifestyle improvements and scheduling regular check-ups to monitor your progress.',
   },
   low: {
-    label: "LOW",
-    sublabel: "RISK",
-    probability: "15%",
-    borderColor: "border-green-500",
-    bgColor: "bg-green-50",
-    textColor: "text-green-600",
-    badgeBg: "bg-green-50",
+    label: 'LOW',
+    sublabel: 'RISK',
+    probability: '15%',
+    borderColor: 'border-green-500',
+    bgColor: 'bg-green-50',
+    textColor: 'text-green-600',
+    badgeBg: 'bg-green-50',
     message:
-      "Great news! Your health profile indicates a low risk of developing diabetes. Maintain your healthy lifestyle and continue with regular medical check-ups.",
+      'Great news! Your health profile indicates a low risk of developing diabetes. Maintain your healthy lifestyle and continue with regular medical check-ups.',
   },
 };
 
-function ResultPage({ onNavigate, riskLevel = "high" }) {
+function ResultPage({ onNavigate, riskLevel = 'high' }) {
   const config = riskConfig[riskLevel] || riskConfig.high;
 
   const recommendations = [
-    "Schedule an appointment with your healthcare provider within 2 weeks",
-    "Consider dietary modifications and regular exercise routine",
-    "Monitor blood glucose levels regularly",
-    "Maintain a healthy weight and active lifestyle",
+    'Schedule an appointment with your healthcare provider within 2 weeks',
+    'Consider dietary modifications and regular exercise routine',
+    'Monitor blood glucose levels regularly',
+    'Maintain a healthy weight and active lifestyle',
   ];
 
   return (
@@ -57,23 +57,17 @@ function ResultPage({ onNavigate, riskLevel = "high" }) {
               <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
                 <i className="fa-solid fa-heart-pulse text-white text-sm"></i>
               </div>
-              <span className="text-xl font-semibold text-gray-900">
-                HealthPredict
-              </span>
+              <span className="text-xl font-semibold text-gray-900">HealthPredict</span>
             </div>
             <nav className="hidden md:flex items-center space-x-8">
               <button
-                onClick={() => onNavigate("user-dashboard")}
+                onClick={() => onNavigate('user-dashboard')}
                 className="text-gray-600 hover:text-primary transition-colors text-sm"
               >
                 Dashboard
               </button>
-              <button className="text-gray-600 hover:text-primary transition-colors text-sm">
-                History
-              </button>
-              <button className="text-gray-600 hover:text-primary transition-colors text-sm">
-                Settings
-              </button>
+              <button className="text-gray-600 hover:text-primary transition-colors text-sm">History</button>
+              <button className="text-gray-600 hover:text-primary transition-colors text-sm">Settings</button>
             </nav>
             <div className="flex items-center space-x-3">
               <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
@@ -89,6 +83,7 @@ function ResultPage({ onNavigate, riskLevel = "high" }) {
         <div className="w-full max-w-2xl">
           {/* Result Card */}
           <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+
             {/* Card Header */}
             <div className="bg-gradient-to-r from-primary/5 to-primary/10 px-6 sm:px-8 py-6 text-center">
               <div className="flex items-center justify-center mb-4">
@@ -96,12 +91,8 @@ function ResultPage({ onNavigate, riskLevel = "high" }) {
                   <i className="fa-solid fa-chart-line text-primary text-xl"></i>
                 </div>
               </div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
-                Prediction Results
-              </h1>
-              <p className="text-gray-600 text-sm sm:text-base">
-                Your diabetes risk assessment is complete
-              </p>
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Prediction Results</h1>
+              <p className="text-gray-600 text-sm sm:text-base">Your diabetes risk assessment is complete</p>
             </div>
 
             {/* Risk Section */}
@@ -111,25 +102,17 @@ function ResultPage({ onNavigate, riskLevel = "high" }) {
                 className={`inline-flex items-center justify-center w-32 h-32 sm:w-40 sm:h-40 ${config.bgColor} border-4 ${config.borderColor} rounded-full mb-6`}
               >
                 <div className="text-center">
-                  <div
-                    className={`text-3xl sm:text-4xl font-bold ${config.textColor} mb-1`}
-                  >
+                  <div className={`text-3xl sm:text-4xl font-bold ${config.textColor} mb-1`}>
                     {config.label}
                   </div>
-                  <div className={`text-sm font-medium ${config.textColor}`}>
-                    {config.sublabel}
-                  </div>
+                  <div className={`text-sm font-medium ${config.textColor}`}>{config.sublabel}</div>
                 </div>
               </div>
 
               {/* Probability */}
               <div className="mb-8">
-                <div className="text-5xl sm:text-6xl font-bold text-gray-900 mb-2">
-                  {config.probability}
-                </div>
-                <p className="text-gray-600 text-lg">
-                  Probability of Developing Diabetes
-                </p>
+                <div className="text-5xl sm:text-6xl font-bold text-gray-900 mb-2">{config.probability}</div>
+                <p className="text-gray-600 text-lg">Probability of Developing Diabetes</p>
               </div>
 
               {/* Explanation */}
@@ -138,9 +121,7 @@ function ResultPage({ onNavigate, riskLevel = "high" }) {
                   <i className="fa-solid fa-info-circle text-primary mr-2"></i>
                   What This Means
                 </h3>
-                <p className="text-gray-700 leading-relaxed">
-                  {config.message}
-                </p>
+                <p className="text-gray-700 leading-relaxed">{config.message}</p>
               </div>
 
               {/* Recommendations */}
@@ -166,7 +147,7 @@ function ResultPage({ onNavigate, riskLevel = "high" }) {
                   Save Result
                 </button>
                 <button
-                  onClick={() => onNavigate("prediction")}
+                  onClick={() => onNavigate('prediction')}
                   className="w-full sm:w-auto bg-white hover:bg-gray-50 text-gray-700 font-medium py-3 px-8 rounded-xl border border-gray-300 transition-colors flex items-center justify-center gap-2"
                 >
                   <i className="fa-solid fa-plus"></i>
@@ -179,10 +160,7 @@ function ResultPage({ onNavigate, riskLevel = "high" }) {
             <div className="bg-gray-50 px-6 sm:px-8 py-4 border-t border-gray-100">
               <div className="flex items-center justify-center text-sm text-gray-500 gap-2">
                 <i className="fa-solid fa-shield-alt text-primary"></i>
-                <span>
-                  This assessment is for informational purposes only and should
-                  not replace professional medical advice
-                </span>
+                <span>This assessment is for informational purposes only and should not replace professional medical advice</span>
               </div>
             </div>
           </div>
@@ -198,7 +176,7 @@ function ResultPage({ onNavigate, riskLevel = "high" }) {
               Share with Doctor
             </button>
             <button
-              onClick={() => onNavigate("user-dashboard")}
+              onClick={() => onNavigate('user-dashboard')}
               className="flex items-center justify-center gap-2 text-gray-600 hover:text-primary transition-colors text-sm"
             >
               <i className="fa-solid fa-history"></i>
@@ -211,10 +189,7 @@ function ResultPage({ onNavigate, riskLevel = "high" }) {
       {/* Footer */}
       <footer className="bg-white border-t border-gray-200 mt-4">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 text-center text-gray-500 text-sm">
-          <p>
-            © 2026 HealthPredict. All rights reserved. | Automated Risk
-            Prevention Analysis
-          </p>
+          <p>© 2024 HealthPredict. All rights reserved. | Medical AI Assistant</p>
         </div>
       </footer>
     </div>

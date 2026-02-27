@@ -1,20 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 
 function LoginPage({ onNavigate }) {
   const [showPassword, setShowPassword] = useState(false);
-  const [role, setRole] = useState('patient');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [role, setRole] = useState("patient");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
   const handleSubmit = (e) => {
     e.preventDefault();
     // Route based on selected role
-    if (role === 'admin') {
-      onNavigate('admin-dashboard');
-    } else if (role === 'staff') {
-      onNavigate('staff-dashboard');
+    if (role === "admin") {
+      onNavigate("admin-dashboard");
+    } else if (role === "staff") {
+      onNavigate("staff-dashboard");
     } else {
-      onNavigate('user-dashboard');
+      onNavigate("user-dashboard");
     }
   };
 
@@ -22,7 +22,6 @@ function LoginPage({ onNavigate }) {
     <div className="bg-white font-sans min-h-screen flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="bg-white rounded-xl shadow-lg p-8 sm:p-10">
-
           {/* Logo Section */}
           <div className="flex justify-center mb-8">
             <div className="flex items-center gap-3">
@@ -30,23 +29,33 @@ function LoginPage({ onNavigate }) {
                 <i className="fa-solid fa-heartbeat text-white text-2xl"></i>
               </div>
               <div>
-                <h1 className="text-2xl font-semibold text-gray-900">HealthPredict</h1>
-                <p className="text-xs text-gray-500">Diabetes Risk Prediction</p>
+                <h1 className="text-2xl font-semibold text-gray-900">
+                  HealthPredict
+                </h1>
+                <p className="text-xs text-gray-500">
+                  Diabetes Risk Prediction
+                </p>
               </div>
             </div>
           </div>
 
           {/* Login Header */}
           <div className="text-center mb-8">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-2">Welcome Back</h2>
-            <p className="text-gray-500 text-sm">Sign in to access your account</p>
+            <h2 className="text-2xl font-semibold text-gray-900 mb-2">
+              Welcome Back
+            </h2>
+            <p className="text-gray-500 text-sm">
+              Sign in to access your account
+            </p>
           </div>
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* Email */}
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">Email Address</label>
+              <label className="block text-sm font-medium text-gray-700">
+                Email Address
+              </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                   <i className="fa-regular fa-envelope text-gray-400"></i>
@@ -63,13 +72,15 @@ function LoginPage({ onNavigate }) {
 
             {/* Password */}
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">Password</label>
+              <label className="block text-sm font-medium text-gray-700">
+                Password
+              </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                   <i className="fa-solid fa-lock text-gray-400"></i>
                 </div>
                 <input
-                  type={showPassword ? 'text' : 'password'}
+                  type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full pl-11 pr-12 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
@@ -80,14 +91,18 @@ function LoginPage({ onNavigate }) {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600"
                 >
-                  <i className={`fa-solid ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                  <i
+                    className={`fa-solid ${showPassword ? "fa-eye-slash" : "fa-eye"}`}
+                  ></i>
                 </button>
               </div>
             </div>
 
             {/* Role */}
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">Select Role</label>
+              <label className="block text-sm font-medium text-gray-700">
+                Select Role
+              </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                   <i className="fa-solid fa-user-tag text-gray-400"></i>
@@ -109,7 +124,10 @@ function LoginPage({ onNavigate }) {
 
             {/* Forgot Password */}
             <div className="flex items-center justify-end">
-              <a href="#" className="text-sm text-primary hover:text-primary-dark font-medium transition-colors">
+              <a
+                href="#"
+                className="text-sm text-primary hover:text-primary-dark font-medium transition-colors"
+              >
                 Forgot password?
               </a>
             </div>
@@ -126,10 +144,14 @@ function LoginPage({ onNavigate }) {
           {/* Register */}
           <div className="mt-8 text-center">
             <p className="text-gray-600 text-sm">
-              Don't have an account?{' '}
-              <a href="#" className="text-primary hover:text-primary-dark font-semibold transition-colors ml-1">
+              Don't have an account?{" "}
+              <button
+                type="button"
+                onClick={() => onNavigate("create-account")}
+                className="text-primary hover:text-primary-dark font-semibold transition-colors ml-1"
+              >
                 Create Account
-              </a>
+              </button>
             </p>
           </div>
 
@@ -143,9 +165,9 @@ function LoginPage({ onNavigate }) {
           {/* Social Login */}
           <div className="flex gap-3">
             {[
-              { icon: 'fa-google', label: 'Google' },
-              { icon: 'fa-apple', label: 'Apple' },
-              { icon: 'fa-microsoft', label: 'Microsoft' },
+              { icon: "fa-google", label: "Google" },
+              { icon: "fa-apple", label: "Apple" },
+              { icon: "fa-microsoft", label: "Microsoft" },
             ].map(({ icon, label }) => (
               <button
                 key={label}

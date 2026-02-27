@@ -1,216 +1,500 @@
-import React, { useState } from 'react';
+import React from "react";
+import DashboardLayout from "../components/DashboardLayout";
+import { NAV_BY_ROLE } from "../components/navConfig";
 
-const recentPredictions = [
-  { id: 1, name: 'Emma Wilson', patientId: 'P001234', risk: 'High Risk', riskBg: 'bg-red-100 text-red-800', date: 'Jan 15, 2024', avatar: 'https://ui-avatars.com/api/?name=Emma+Wilson&background=FEE2E2&color=DC2626' },
-  { id: 2, name: 'John Martinez', patientId: 'P001235', risk: 'Low Risk', riskBg: 'bg-green-100 text-green-800', date: 'Jan 14, 2024', avatar: 'https://ui-avatars.com/api/?name=John+Martinez&background=DCFCE7&color=16A34A' },
-  { id: 3, name: 'Lisa Thompson', patientId: 'P001236', risk: 'Medium Risk', riskBg: 'bg-yellow-100 text-yellow-800', date: 'Jan 13, 2024', avatar: 'https://ui-avatars.com/api/?name=Lisa+Thompson&background=FEF9C3&color=CA8A04' },
-  { id: 4, name: 'Robert Kim', patientId: 'P001237', risk: 'High Risk', riskBg: 'bg-red-100 text-red-800', date: 'Jan 13, 2024', avatar: 'https://ui-avatars.com/api/?name=Robert+Kim&background=FEE2E2&color=DC2626' },
-  { id: 5, name: 'Amanda Foster', patientId: 'P001238', risk: 'Low Risk', riskBg: 'bg-green-100 text-green-800', date: 'Jan 12, 2024', avatar: 'https://ui-avatars.com/api/?name=Amanda+Foster&background=DCFCE7&color=16A34A' },
+const STATS = [
+  {
+    label: "Total Patients",
+    value: "1,284",
+    change: "+12%",
+    up: true,
+    icon: "fa-users",
+    bg: "bg-blue-100",
+    text: "text-blue-600",
+    blob: "bg-blue-50",
+    border: "border-l-blue-500",
+  },
+  {
+    label: "High Risk Cases",
+    value: "142",
+    change: "+5%",
+    up: true,
+    icon: "fa-triangle-exclamation",
+    bg: "bg-red-100",
+    text: "text-red-600",
+    blob: "bg-red-50",
+    border: "border-l-red-500",
+  },
+  {
+    label: "Predictions Today",
+    value: "28",
+    change: "Today",
+    up: null,
+    icon: "fa-clipboard-check",
+    bg: "bg-yellow-100",
+    text: "text-yellow-600",
+    blob: "bg-yellow-50",
+    border: "border-l-yellow-500",
+  },
+  {
+    label: "Model Accuracy",
+    value: "94.8%",
+    change: null,
+    up: null,
+    icon: "fa-bullseye",
+    bg: "bg-emerald-100",
+    text: "text-emerald-600",
+    blob: "bg-emerald-50",
+    border: "border-l-emerald-500",
+  },
 ];
 
-const navItems = [
-  { icon: 'fa-chart-line', label: 'Dashboard' },
-  { icon: 'fa-user-injured', label: 'Patients' },
-  { icon: 'fa-brain', label: 'Predictions' },
-  { icon: 'fa-file-medical-alt', label: 'Reports' },
-  { icon: 'fa-cog', label: 'Settings' },
+const FORM_FIELDS = [
+  {
+    label: "Glucose Level (mg/dL)",
+    icon: "fa-droplet",
+    placeholder: "e.g. 140",
+  },
+  {
+    label: "Blood Pressure (mm Hg)",
+    icon: "fa-heart-pulse",
+    placeholder: "e.g. 80",
+  },
+  {
+    label: "BMI Index",
+    icon: "fa-weight-scale",
+    placeholder: "e.g. 24.5",
+    step: "0.1",
+  },
+  { label: "Age", icon: "fa-calendar", placeholder: "e.g. 45" },
 ];
 
-const quickActions = [
-  { icon: 'fa-search', label: 'Search Patient', desc: 'Find patient records', bg: 'bg-blue-100', iconColor: 'text-primary' },
-  { icon: 'fa-plus', label: 'New Prediction', desc: 'Create risk assessment', bg: 'bg-green-100', iconColor: 'text-green-600' },
-  { icon: 'fa-folder-open', label: 'All Records', desc: 'View patient data', bg: 'bg-purple-100', iconColor: 'text-purple-600' },
-  { icon: 'fa-download', label: 'Export Reports', desc: 'Download analytics', bg: 'bg-orange-100', iconColor: 'text-orange-600' },
+const RECENT_PATIENTS = [
+  {
+    name: "Wade Warren",
+    id: "#P-7732",
+    age: "58yo",
+    risk: "Moderate",
+    cls: "bg-yellow-100 text-yellow-600 border-yellow-200",
+  },
+  {
+    name: "Esther Howard",
+    id: "#P-1234",
+    age: "29yo",
+    risk: "Low Risk",
+    cls: "bg-green-100 text-green-600 border-green-200",
+  },
 ];
 
-function StaffDashboard({ onNavigate }) {
-  const [activeNav, setActiveNav] = useState('Dashboard');
-  const [searchQuery, setSearchQuery] = useState('');
+const TABLE_ROWS = [
+  {
+    initials: "RF",
+    name: "Robert Fox",
+    date: "Oct 24, 2023",
+    glucose: "142 mg/dL",
+    bp: "88 mm Hg",
+    bmi: "28.4",
+    score: 85,
+    risk: "High Risk",
+    riskCls: "bg-red-50 text-red-600 border-red-100",
+    barCls: "bg-red-500",
+    avatarCls: "bg-blue-100 text-blue-600",
+  },
+  {
+    initials: "JC",
+    name: "Jane Cooper",
+    date: "Oct 23, 2023",
+    glucose: "98 mg/dL",
+    bp: "72 mm Hg",
+    bmi: "22.1",
+    score: 12,
+    risk: "Healthy",
+    riskCls: "bg-green-50 text-green-600 border-green-100",
+    barCls: "bg-green-500",
+    avatarCls: null,
+  },
+  {
+    initials: "WW",
+    name: "Wade Warren",
+    date: "Oct 22, 2023",
+    glucose: "115 mg/dL",
+    bp: "80 mm Hg",
+    bmi: "26.8",
+    score: 45,
+    risk: "Moderate",
+    riskCls: "bg-yellow-50 text-yellow-600 border-yellow-100",
+    barCls: "bg-yellow-400",
+    avatarCls: "bg-purple-100 text-purple-600",
+  },
+];
 
+function LineChart() {
+  const pts = [120, 132, 101, 134, 90, 130, 110];
+  const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const w = 400,
+    h = 160,
+    pad = 20;
+  const max = Math.max(...pts),
+    min = Math.min(...pts);
+  const x = (i) => pad + (i / (pts.length - 1)) * (w - pad * 2);
+  const y = (v) => pad + (1 - (v - min) / (max - min)) * (h - pad * 2);
+  const path = pts
+    .map((v, i) => `${i === 0 ? "M" : "L"}${x(i)},${y(v)}`)
+    .join(" ");
   return (
-    <div className="bg-white font-sans min-h-screen">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-100 shadow-sm sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-3">
-              <div className="bg-primary/10 p-2 rounded-xl">
-                <i className="fa-solid fa-heart-pulse text-primary text-lg"></i>
-              </div>
-              <div>
-                <h1 className="text-xl font-semibold text-gray-900">HealthPredict</h1>
-                <p className="text-xs text-gray-500">Staff Portal</p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-4">
-              <div className="hidden sm:flex items-center text-sm text-gray-600">
-                <i className="fa-solid fa-user-doctor mr-2 text-primary"></i>
-                <span>Dr. Sarah Johnson</span>
-              </div>
-              <button className="bg-gray-100 hover:bg-gray-200 p-2 rounded-xl transition-colors">
-                <i className="fa-solid fa-bell text-gray-600"></i>
-              </button>
-              <button
-                onClick={() => onNavigate('login')}
-                className="bg-gray-100 hover:bg-gray-200 p-2 rounded-xl transition-colors"
-                title="Logout"
-              >
-                <i className="fa-solid fa-sign-out-alt text-gray-600"></i>
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <div className="flex min-h-[calc(100vh-64px)] bg-gray-50">
-        {/* Sidebar */}
-        <aside className="hidden lg:flex lg:w-64 bg-white border-r border-gray-200 shadow-sm flex-col">
-          <div className="py-6">
-            <nav className="px-6 space-y-1">
-              {navItems.map((item) => (
-                <button
-                  key={item.label}
-                  onClick={() => setActiveNav(item.label)}
-                  className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-colors text-left ${
-                    activeNav === item.label
-                      ? 'text-primary bg-primary/5'
-                      : 'text-gray-600 hover:bg-gray-50'
-                  }`}
-                >
-                  <i className={`fa-solid ${item.icon} mr-3`}></i>
-                  {item.label}
-                </button>
-              ))}
-            </nav>
-          </div>
-        </aside>
-
-        {/* Main Content */}
-        <main className="flex-1 overflow-auto">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-
-            {/* Dashboard Header */}
-            <div className="mb-8">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-2">Staff Dashboard</h2>
-              <p className="text-gray-600">Manage patient records and diabetes risk predictions</p>
-            </div>
-
-            {/* Quick Actions */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              {quickActions.map((action) => (
-                <button
-                  key={action.label}
-                  onClick={() => action.label === 'New Prediction' && onNavigate('prediction')}
-                  className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow cursor-pointer text-left"
-                >
-                  <div className="flex items-center">
-                    <div className={`${action.bg} p-3 rounded-xl`}>
-                      <i className={`fa-solid ${action.icon} ${action.iconColor} text-xl`}></i>
-                    </div>
-                    <div className="ml-4">
-                      <h3 className="text-base font-medium text-gray-900">{action.label}</h3>
-                      <p className="text-sm text-gray-500">{action.desc}</p>
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
-
-            {/* Search Section */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-8">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Patient Search</h3>
-              <div className="flex flex-col sm:flex-row gap-4">
-                <div className="flex-1">
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Enter patient ID or name..."
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent focus:outline-none"
-                  />
-                </div>
-                <button className="bg-primary text-white px-6 py-3 rounded-xl hover:bg-primary-dark transition-colors font-medium flex items-center justify-center gap-2">
-                  <i className="fa-solid fa-search"></i>
-                  Search
-                </button>
-              </div>
-            </div>
-
-            {/* Recent Predictions */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-8">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-lg font-semibold text-gray-900">Recent Predictions</h3>
-                <button className="text-primary hover:text-primary-dark text-sm font-medium">View All</button>
-              </div>
-
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-gray-100">
-                      {['Patient', 'Risk Level', 'Date', 'Action'].map((h) => (
-                        <th key={h} className="text-left py-3 px-4 font-medium text-gray-600 text-sm">{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {recentPredictions.map((p) => (
-                      <tr key={p.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
-                        <td className="py-4 px-4">
-                          <div className="flex items-center">
-                            <img src={p.avatar} alt={p.name} className="w-8 h-8 rounded-full mr-3 object-cover" />
-                            <div>
-                              <div className="font-medium text-gray-900 text-sm">{p.name}</div>
-                              <div className="text-xs text-gray-500">ID: {p.patientId}</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="py-4 px-4">
-                          <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${p.riskBg}`}>
-                            {p.risk}
-                          </span>
-                        </td>
-                        <td className="py-4 px-4 text-sm text-gray-600">{p.date}</td>
-                        <td className="py-4 px-4">
-                          <button
-                            onClick={() => onNavigate('result')}
-                            className="text-primary hover:text-primary-dark text-sm font-medium"
-                          >
-                            View Details
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* Summary Stats */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-              {[
-                { label: 'Patients Today', value: '18', icon: 'fa-user-injured', bg: 'bg-blue-50', color: 'text-primary' },
-                { label: 'High Risk Alerts', value: '4', icon: 'fa-triangle-exclamation', bg: 'bg-red-50', color: 'text-red-500' },
-                { label: 'Pending Reviews', value: '7', icon: 'fa-clock', bg: 'bg-yellow-50', color: 'text-yellow-600' },
-              ].map((stat) => (
-                <div key={stat.label} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-600 mb-1">{stat.label}</p>
-                      <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-                    </div>
-                    <div className={`w-12 h-12 ${stat.bg} rounded-xl flex items-center justify-center`}>
-                      <i className={`fa-solid ${stat.icon} ${stat.color}`}></i>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-          </div>
-        </main>
-      </div>
-    </div>
+    <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-full">
+      <path
+        d={`${path} L${x(pts.length - 1)},${h - pad} L${x(0)},${h - pad} Z`}
+        fill="rgba(37,99,235,0.1)"
+      />
+      <path
+        d={path}
+        fill="none"
+        stroke="#2563eb"
+        strokeWidth="2.5"
+        strokeLinejoin="round"
+        strokeLinecap="round"
+      />
+      {pts.map((v, i) => (
+        <circle
+          key={i}
+          cx={x(i)}
+          cy={y(v)}
+          r="4"
+          fill="#2563eb"
+          stroke="white"
+          strokeWidth="2"
+        />
+      ))}
+      {days.map((d, i) => (
+        <text
+          key={i}
+          x={x(i)}
+          y={h - 4}
+          textAnchor="middle"
+          fontSize="10"
+          fill="#94a3b8"
+        >
+          {d}
+        </text>
+      ))}
+    </svg>
   );
 }
 
-export default StaffDashboard;
+export default function StaffDashboard({ onNavigate }) {
+  return (
+    <DashboardLayout
+      navItems={NAV_BY_ROLE.staff}
+      activePage="staff-dashboard"
+      onNavigate={onNavigate}
+      title="Dashboard Overview"
+      subtitle="Welcome back, Dr. Sarah"
+    >
+      {/* Stats */}
+      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {STATS.map(
+          ({ label, value, change, up, icon, bg, text, blob, border }) => (
+            <div
+              key={label}
+              className={`bg-white rounded-2xl p-6 h-40 relative overflow-hidden group hover:shadow-lg transition-all border-l-4 ${border} shadow-sm`}
+            >
+              <div
+                className={`absolute right-0 top-0 w-24 h-24 ${blob} rounded-full -mr-8 -mt-8 group-hover:scale-110 transition-transform`}
+              />
+              <div className="relative z-10">
+                <div className="flex justify-between items-start mb-4">
+                  <div className={`p-2 ${bg} ${text} rounded-lg`}>
+                    <i className={`fa-solid ${icon} text-lg`}></i>
+                  </div>
+                  {change && (
+                    <span
+                      className={`text-xs font-medium px-2 py-1 rounded-full flex items-center gap-1 ${
+                        up === true
+                          ? "text-green-600 bg-green-50"
+                          : up === false
+                            ? "text-red-600 bg-red-50"
+                            : "text-slate-500 bg-slate-100"
+                      }`}
+                    >
+                      {up !== null && (
+                        <i
+                          className={`fa-solid fa-arrow-${up ? "up" : "down"} text-[10px]`}
+                        ></i>
+                      )}
+                      {change}
+                    </span>
+                  )}
+                </div>
+                <h3 className="text-slate-500 text-sm font-medium">{label}</h3>
+                <p className="text-3xl font-bold text-slate-800 mt-1">
+                  {value}
+                </p>
+              </div>
+            </div>
+          ),
+        )}
+      </section>
+
+      {/* Main Grid */}
+      <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 space-y-6">
+          {/* Prediction Form */}
+          <div className="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-slate-100">
+            <div className="mb-6">
+              <h2 className="text-xl font-bold text-slate-800">
+                New Risk Assessment
+              </h2>
+              <p className="text-sm text-slate-500 mt-1">
+                Enter patient vitals for instant AI prediction
+              </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
+              {FORM_FIELDS.map(({ label, icon, placeholder, step }) => (
+                <div key={label} className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">
+                    {label}
+                  </label>
+                  <div className="relative">
+                    <i
+                      className={`fa-solid ${icon} absolute left-3 top-1/2 -translate-y-1/2 text-slate-400`}
+                    ></i>
+                    <input
+                      type="number"
+                      step={step}
+                      placeholder={placeholder}
+                      className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all text-sm"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
+                onClick={() => onNavigate("result")}
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3.5 px-6 rounded-xl shadow-lg shadow-blue-500/30 transition-all flex items-center justify-center gap-2"
+              >
+                <i className="fa-solid fa-wand-magic-sparkles"></i>
+                Run Prediction
+              </button>
+              <button className="px-6 py-3.5 bg-white border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 transition-all flex items-center justify-center gap-2">
+                <i className="fa-solid fa-floppy-disk"></i>
+                Save Draft
+              </button>
+            </div>
+          </div>
+
+          {/* Line Chart */}
+          <div className="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-slate-100">
+            <div className="flex items-start justify-between">
+              <div>
+                <h2 className="text-xl font-bold text-slate-800">
+                  Glucose Trends
+                </h2>
+                <p className="text-sm text-slate-500 mt-1">
+                  Past 7 day patient readings
+                </p>
+              </div>
+              <button className="text-sm text-blue-600 font-medium">
+                Export CSV
+              </button>
+            </div>
+            <div className="mt-6">
+              <LineChart />
+            </div>
+          </div>
+        </div>
+
+        {/* Sidebar Cards */}
+        <div className="space-y-6">
+          {/* Recent patients */}
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-lg font-bold text-slate-800">
+                  Recent patients
+                </h2>
+                <p className="text-sm text-slate-500">High priority</p>
+              </div>
+              <button className="text-sm text-blue-600 font-medium">
+                View all
+              </button>
+            </div>
+            <div className="space-y-4">
+              {RECENT_PATIENTS.map(({ name, id, age, risk, cls }) => (
+                <div
+                  key={id}
+                  className="p-4 rounded-xl border border-slate-100 hover:border-blue-200 transition-colors flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-semibold">
+                      {name
+                        .split(" ")
+                        .map((n) => n[0])
+                        .join("")}
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-slate-800">
+                        {name}
+                      </p>
+                      <p className="text-xs text-slate-400">
+                        {id} · {age}
+                      </p>
+                    </div>
+                  </div>
+                  <span
+                    className={`text-xs font-semibold px-3 py-1 rounded-full border ${cls}`}
+                  >
+                    {risk}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Tasks */}
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-3">
+            <div className="flex items-start justify-between">
+              <div>
+                <h2 className="text-lg font-bold text-slate-800">Tasks</h2>
+                <p className="text-sm text-slate-500">Follow-up reminders</p>
+              </div>
+              <button className="text-sm text-blue-600 font-medium">
+                Add task
+              </button>
+            </div>
+            {[
+              "Review lab results",
+              "Schedule dietitian consult",
+              "Update care plan",
+            ].map((task) => (
+              <div
+                key={task}
+                className="flex items-center gap-3 p-3 rounded-xl border border-slate-100 hover:border-blue-200 transition-colors"
+              >
+                <input type="checkbox" className="accent-blue-600 w-4 h-4" />
+                <span className="text-sm text-slate-700">{task}</span>
+              </div>
+            ))}
+            <div className="p-4 bg-blue-50 border border-blue-100 rounded-xl">
+              <p className="text-sm text-blue-700 font-medium">
+                AI suggestions ready
+              </p>
+              <p className="text-xs text-blue-600">
+                3 new recommendations for high-risk patients
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Table */}
+      <section className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+        <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
+          <div>
+            <h2 className="text-xl font-bold text-slate-800">
+              Recent assessments
+            </h2>
+            <p className="text-sm text-slate-500">Updated 2 hours ago</p>
+          </div>
+          <div className="flex gap-2">
+            {["All", "Healthy", "Moderate", "High risk"].map((filter) => (
+              <button
+                key={filter}
+                className={`px-3 py-1.5 text-sm rounded-lg border transition-colors ${
+                  filter === "All"
+                    ? "bg-blue-50 text-blue-600 border-blue-200"
+                    : "text-slate-500 border-slate-200 hover:border-blue-200 hover:text-blue-600"
+                }`}
+              >
+                {filter}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="overflow-x-auto -mx-6 px-6">
+          <table className="w-full min-w-[880px]">
+            <thead>
+              <tr className="text-left text-xs text-slate-500 uppercase border-b border-slate-100">
+                {[
+                  "Patient",
+                  "Date",
+                  "Glucose",
+                  "Blood Pressure",
+                  "BMI",
+                  "Risk Score",
+                  "Status",
+                ].map((head) => (
+                  <th key={head} className="py-3 font-semibold">
+                    {head}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="text-sm text-slate-700">
+              {TABLE_ROWS.map(
+                ({
+                  initials,
+                  name,
+                  date,
+                  glucose,
+                  bp,
+                  bmi,
+                  score,
+                  risk,
+                  riskCls,
+                  barCls,
+                  avatarCls,
+                }) => (
+                  <tr
+                    key={name}
+                    className="border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors"
+                  >
+                    <td className="py-4">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center font-semibold text-slate-700 ${avatarCls}`}
+                        >
+                          {initials}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-slate-900">{name}</p>
+                          <p className="text-xs text-slate-400">ID: P-1024</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-4 text-slate-600">{date}</td>
+                    <td className="py-4">{glucose}</td>
+                    <td className="py-4">{bp}</td>
+                    <td className="py-4">{bmi}</td>
+                    <td className="py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-20 h-1.5 rounded-full bg-slate-100 overflow-hidden">
+                          <div
+                            className={`h-full ${barCls}`}
+                            style={{ width: `${score}%` }}
+                          />
+                        </div>
+                        <span className="text-sm font-semibold text-slate-900">
+                          {score}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="py-4">
+                      <span
+                        className={`text-xs font-semibold px-3 py-1 rounded-full border ${riskCls}`}
+                      >
+                        {risk}
+                      </span>
+                    </td>
+                  </tr>
+                ),
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </DashboardLayout>
+  );
+}
