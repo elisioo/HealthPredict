@@ -1,10 +1,10 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Sidebar from "./Sidebar";
+import { useAuth } from "../context/AuthContext";
 
 export default function DashboardLayout({
   navItems,
-  activePage,
-  onNavigate,
   title = "Dashboard Overview",
   subtitle,
   children,
@@ -15,10 +15,12 @@ export default function DashboardLayout({
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
 
-  const handleNavigate = (page) => {
-    if (onNavigate) onNavigate(page);
-    setSidebarOpen(false);
+  const handleLogout = async () => {
+    await logout();
+    navigate("/login");
   };
 
   const sidebarWidthClass = collapsed ? "lg:ml-20" : "lg:ml-[18rem]";
@@ -41,8 +43,6 @@ export default function DashboardLayout({
       >
         <Sidebar
           navItems={navItems}
-          activePage={activePage}
-          onNavigate={handleNavigate}
           brandTitle={brandTitle}
           brandSubtitle={brandSubtitle}
           className="shadow-lg lg:shadow-none"
@@ -86,10 +86,30 @@ export default function DashboardLayout({
                   <i className="fa-regular fa-bell"></i>
                   <span className="absolute top-2 right-2.5 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
                 </button>
-                <button className="w-10 h-10 rounded-full bg-white border border-slate-100 text-slate-500 hover:text-blue-600 hover:bg-blue-50 flex items-center justify-center shadow-sm">
-                  <i className="fa-regular fa-moon"></i>
-                </button>
               </>
+            )}
+            {/* User info + logout */}
+            {user && (
+              <div className="flex items-center gap-2 border-l border-slate-200 pl-3">
+                <div className="hidden sm:block text-right">
+                  <p className="text-xs font-semibold text-slate-700 leading-none">
+                    {user.fullName || user.full_name}
+                  </p>
+                  <p className="text-[10px] text-slate-400 capitalize mt-0.5">
+                    {user.role === "health_user" ? "Health User" : user.role}
+                  </p>
+                </div>
+                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                  <i className="fa-solid fa-user text-primary text-xs"></i>
+                </div>
+                <button
+                  onClick={handleLogout}
+                  title="Sign out"
+                  className="w-8 h-8 rounded-full bg-white border border-slate-200 text-slate-500 hover:text-red-500 hover:bg-red-50 flex items-center justify-center shadow-sm transition-colors"
+                >
+                  <i className="fa-solid fa-right-from-bracket text-xs"></i>
+                </button>
+              </div>
             )}
           </div>
         </header>

@@ -1,37 +1,53 @@
 import React from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 const NAV = [
-  { icon: "fa-house", label: "Dashboard", page: "staff-dashboard" },
-  { icon: "fa-plus-circle", label: "New Prediction", page: "prediction" },
+  { icon: "fa-house", label: "Dashboard", page: "/staff" },
+  { icon: "fa-plus-circle", label: "New Prediction", page: "/prediction" },
   {
     icon: "fa-folder-open",
     label: "Patient Records",
-    page: "patient-records",
+    page: "/staff/patients",
     badge: "12",
   },
-  { icon: "fa-chart-pie", label: "Analytics Reports", page: "reports" },
+  { icon: "fa-chart-pie", label: "Analytics Reports", page: "/admin/reports" },
   { icon: "fa-user-doctor", label: "Medical Team", page: null },
 ];
 
 export default function Sidebar({
   navItems = NAV,
-  activePage,
   activeLabel,
-  onNavigate,
   className = "",
   brandTitle = "Glucogu",
   brandIcon = "fa-heart-pulse",
   brandLogoSrc = "/assets/logo.png",
   brandSubtitle,
   footerUser = { name: "Dr. Sarah Cole", role: "Endocrinologist" },
-  onLogout,
   collapsed = false,
   onToggleCollapse,
   onCloseMobile,
 }) {
-  const handleClick = (page) => {
-    if (page && onNavigate) onNavigate(page);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { logout, user } = useAuth();
+
+  const handleClick = (path) => {
+    if (path) navigate(path);
   };
+
+  const handleLogout = async () => {
+    await logout();
+    navigate("/login");
+  };
+
+  // Derive displayed user info from auth context when available
+  const displayUser = user
+    ? {
+        name: user.fullName || user.full_name || footerUser.name,
+        role: user.role === "health_user" ? "Health User" : user.role,
+      }
+    : footerUser;
 
   return (
     <aside
@@ -91,8 +107,9 @@ export default function Sidebar({
         className={`flex-1 py-6 ${collapsed ? "px-2" : "px-4"} space-y-1 overflow-y-auto`}
       >
         {navItems.map(({ icon, label, page, badge }) => {
-          const isActive = activePage
-            ? activePage === page
+          const isActive = page
+            ? location.pathname === page ||
+              location.pathname.startsWith(page + "/")
             : activeLabel === label;
           return (
             <button
@@ -143,15 +160,16 @@ export default function Sidebar({
           {!collapsed && (
             <div className="overflow-hidden flex-1">
               <p className="text-sm font-semibold text-slate-700 truncate">
-                {footerUser?.name}
+                {displayUser.name}
               </p>
-              <p className="text-xs text-slate-400">{footerUser?.role}</p>
+              <p className="text-xs text-slate-400 capitalize">
+                {displayUser.role}
+              </p>
             </div>
           )}
           <button
-            onClick={() =>
-              onLogout ? onLogout() : onNavigate && onNavigate("login")
-            }
+            onClick={handleLogout}
+            title="Sign out"
             className="text-slate-400 hover:text-red-500 transition-colors"
           >
             <i className="fa-solid fa-arrow-right-from-bracket"></i>

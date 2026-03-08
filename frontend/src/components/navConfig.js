@@ -1,29 +1,34 @@
-// Shared navigation definitions by role for the reusable Sidebar
+// Shared navigation definitions by role.
+// `page` is now a URL path so Sidebar can call navigate(page) directly.
 export const NAV_BY_ROLE = {
   admin: [
-    { icon: "fa-chart-line", label: "Dashboard", page: "admin-dashboard" },
-    { icon: "fa-users", label: "Manage Users", page: null },
-    { icon: "fa-brain", label: "ML Model", page: null },
-    { icon: "fa-chart-pie", label: "Predictions", page: "reports" },
-    { icon: "fa-file-lines", label: "System Logs", page: null },
+    { icon: "fa-chart-line", label: "Dashboard", page: "/admin" },
+    { icon: "fa-users", label: "Manage Users", page: "/admin/users" },
+    { icon: "fa-brain", label: "ML Model", page: "/admin/ml-model" },
+    { icon: "fa-chart-pie", label: "Predictions", page: "/admin/reports" },
+    { icon: "fa-file-lines", label: "System Logs", page: "/admin/logs" },
   ],
   staff: [
-    { icon: "fa-house", label: "Dashboard", page: "staff-dashboard" },
-    { icon: "fa-plus-circle", label: "New Prediction", page: "prediction" },
+    { icon: "fa-house", label: "Dashboard", page: "/staff" },
+    { icon: "fa-plus-circle", label: "New Prediction", page: "/prediction" },
     {
       icon: "fa-folder-open",
       label: "Patient Records",
-      page: "patient-records",
+      page: "/staff/patients",
       badge: "12",
     },
-    { icon: "fa-chart-pie", label: "Analytics Reports", page: "reports" },
-    { icon: "fa-user-doctor", label: "Medical Team", page: null },
+    {
+      icon: "fa-chart-pie",
+      label: "Analytics Reports",
+      page: "/admin/reports",
+    },
+    { icon: "fa-user-doctor", label: "Medical Team", page: "/staff/team" },
   ],
   patient: [
-    { icon: "fa-chart-line", label: "Dashboard", page: "user-dashboard" },
-    { icon: "fa-stethoscope", label: "New Prediction", page: "prediction" },
-    { icon: "fa-clock-rotate-left", label: "History", page: null },
-    { icon: "fa-user", label: "Profile", page: null },
-    { icon: "fa-gear", label: "Settings", page: null },
+    { icon: "fa-chart-line", label: "Dashboard", page: "/dashboard" },
+    { icon: "fa-stethoscope", label: "New Prediction", page: "/prediction" },
+    { icon: "fa-clock-rotate-left", label: "History", page: "/history" },
+    { icon: "fa-user", label: "Profile", page: "/profile" },
+    { icon: "fa-gear", label: "Settings", page: "/settings" },
   ],
 };

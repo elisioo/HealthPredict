@@ -1,6 +1,8 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../components/DashboardLayout";
 import { NAV_BY_ROLE } from "../components/navConfig";
+import { useAuth } from "../context/AuthContext";
 
 const historyData = [
   {
@@ -114,21 +116,15 @@ function LineChart() {
   );
 }
 
-function UserDashboard({ onNavigate }) {
-  const [activeNav, setActiveNav] = useState("user-dashboard");
-
-  const handleNavigate = (page) => {
-    if (!page) return;
-    setActiveNav(page);
-    onNavigate(page);
-  };
+function UserDashboard() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const firstName = user?.fullName?.split(" ")[0] || "there";
 
   return (
     <DashboardLayout
       navItems={NAV_BY_ROLE.patient}
-      activePage={activeNav}
-      onNavigate={handleNavigate}
-      title="Welcome back, Shane"
+      title={`Welcome back, ${firstName}!`}
       subtitle="Monitor your diabetes risk and stay healthy"
       searchPlaceholder="Search your records..."
     >
@@ -137,7 +133,7 @@ function UserDashboard({ onNavigate }) {
           <p className="text-gray-600">Keep tracking your metrics daily</p>
         </div>
         <button
-          onClick={() => onNavigate("prediction")}
+          onClick={() => navigate("/prediction")}
           className="w-full sm:w-auto bg-primary hover:bg-primary-dark text-white px-6 py-3 rounded-xl font-medium transition-colors shadow-sm flex items-center justify-center gap-2"
         >
           <i className="fa-solid fa-plus"></i>
@@ -180,7 +176,7 @@ function UserDashboard({ onNavigate }) {
               </p>
             </div>
             <button
-              onClick={() => onNavigate("result")}
+              onClick={() => navigate("/result")}
               className="w-full text-primary hover:text-primary-dark text-sm font-medium py-2 border border-primary/20 hover:border-primary/50 rounded-xl transition-colors"
             >
               View Full Report →
@@ -305,7 +301,7 @@ function UserDashboard({ onNavigate }) {
                   <td className="py-3 text-sm text-gray-600">{h.bmi}</td>
                   <td className="py-3">
                     <button
-                      onClick={() => onNavigate("result")}
+                      onClick={() => navigate("/result")}
                       className="text-primary hover:text-primary-dark text-sm font-medium"
                     >
                       View →

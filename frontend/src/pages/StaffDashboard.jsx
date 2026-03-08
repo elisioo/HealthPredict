@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../components/DashboardLayout";
 import { NAV_BY_ROLE } from "../components/navConfig";
 
@@ -182,12 +183,11 @@ function LineChart() {
   );
 }
 
-export default function StaffDashboard({ onNavigate }) {
+export default function StaffDashboard() {
+  const navigate = useNavigate();
   return (
     <DashboardLayout
       navItems={NAV_BY_ROLE.staff}
-      activePage="staff-dashboard"
-      onNavigate={onNavigate}
       title="Dashboard Overview"
       subtitle="Welcome back, Dr. Sarah"
     >
@@ -271,7 +271,7 @@ export default function StaffDashboard({ onNavigate }) {
             </div>
             <div className="flex flex-col sm:flex-row gap-3">
               <button
-                onClick={() => onNavigate("result")}
+                onClick={() => navigate("/result")}
                 className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3.5 px-6 rounded-xl shadow-lg shadow-blue-500/30 transition-all flex items-center justify-center gap-2"
               >
                 <i className="fa-solid fa-wand-magic-sparkles"></i>

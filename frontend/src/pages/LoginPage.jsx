@@ -1,25 +1,61 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import ReCAPTCHA from "react-google-recaptcha";
+import { useAuth } from "../context/AuthContext";
 
-function LoginPage({ onNavigate }) {
+const RECAPTCHA_SITE_KEY = process.env.REACT_APP_RECAPTCHA_SITE_KEY || "";
+
+const ROLE_PATHS = {
+  admin: "/admin",
+  staff: "/staff",
+  health_user: "/dashboard",
+};
+
+function LoginPage() {
+  const { login } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const from = location.state?.from?.pathname || null;
+  const recaptchaRef = useRef(null);
+
   const [showPassword, setShowPassword] = useState(false);
-  const [role, setRole] = useState("patient");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [captchaToken, setCaptchaToken] = useState(null);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Route based on selected role
-    if (role === "admin") {
-      onNavigate("admin-dashboard");
-    } else if (role === "staff") {
-      onNavigate("staff-dashboard");
-    } else {
-      onNavigate("user-dashboard");
+    setError("");
+
+    if (!captchaToken) {
+      setError("Please complete the CAPTCHA verification.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const user = await login({ email, password, captchaToken });
+
+      const dest = from || ROLE_PATHS[user.role] || "/dashboard";
+      navigate(dest, { replace: true });
+    } catch (err) {
+      const msg =
+        err.response?.data?.error ||
+        err.response?.data?.errors?.[0]?.msg ||
+        "Login failed. Please check your credentials.";
+      setError(msg);
+      // Reset CAPTCHA on failure
+      recaptchaRef.current?.reset();
+      setCaptchaToken(null);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="bg-white font-sans min-h-screen flex items-center justify-center p-4">
+    <div className="bg-gradient-to-br from-blue-50 via-white to-purple-50font-sans min-h-screen flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="bg-white rounded-xl shadow-lg p-8 sm:p-10">
           {/* Logo Section */}
@@ -30,11 +66,9 @@ function LoginPage({ onNavigate }) {
               </div>
               <div>
                 <h1 className="text-2xl font-semibold text-gray-900">
-                  HealthPredict
+                  Glucogu
                 </h1>
-                <p className="text-xs text-gray-500">
-                  Diabetes Risk Prediction
-                </p>
+                <p className="text-xs text-gray-500">powered by LR Model</p>
               </div>
             </div>
           </div>
@@ -48,6 +82,14 @@ function LoginPage({ onNavigate }) {
               Sign in to access your account
             </p>
           </div>
+
+          {/* Error Alert */}
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl flex items-start gap-2">
+              <i className="fa-solid fa-circle-exclamation text-red-500 mt-0.5"></i>
+              <p className="text-sm text-red-600">{error}</p>
+            </div>
+          )}
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-5">
@@ -64,6 +106,7 @@ function LoginPage({ onNavigate }) {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  required
                   className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                   placeholder="you@example.com"
                 />
@@ -83,6 +126,7 @@ function LoginPage({ onNavigate }) {
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  required
                   className="w-full pl-11 pr-12 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                   placeholder="Enter your password"
                 />
@@ -98,30 +142,6 @@ function LoginPage({ onNavigate }) {
               </div>
             </div>
 
-            {/* Role */}
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
-                Select Role
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <i className="fa-solid fa-user-tag text-gray-400"></i>
-                </div>
-                <select
-                  value={role}
-                  onChange={(e) => setRole(e.target.value)}
-                  className="w-full pl-11 pr-10 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all appearance-none cursor-pointer"
-                >
-                  <option value="patient">Patient</option>
-                  <option value="staff">Staff</option>
-                  <option value="admin">Administrator</option>
-                </select>
-                <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
-                  <i className="fa-solid fa-chevron-down text-gray-400 text-sm"></i>
-                </div>
-              </div>
-            </div>
-
             {/* Forgot Password */}
             <div className="flex items-center justify-end">
               <a
@@ -132,12 +152,30 @@ function LoginPage({ onNavigate }) {
               </a>
             </div>
 
+            {/* CAPTCHA */}
+            <div className="flex justify-center">
+              <ReCAPTCHA
+                ref={recaptchaRef}
+                sitekey={RECAPTCHA_SITE_KEY}
+                onChange={(token) => setCaptchaToken(token)}
+                onExpired={() => setCaptchaToken(null)}
+              />
+            </div>
+
             {/* Submit */}
             <button
               type="submit"
-              className="w-full bg-primary hover:bg-primary-dark text-white font-semibold py-3 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg"
+              disabled={loading}
+              className="w-full bg-primary hover:bg-primary-dark text-white font-semibold py-3 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              Sign In
+              {loading ? (
+                <>
+                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                  Signing in…
+                </>
+              ) : (
+                "Sign In"
+              )}
             </button>
           </form>
 
@@ -147,7 +185,7 @@ function LoginPage({ onNavigate }) {
               Don't have an account?{" "}
               <button
                 type="button"
-                onClick={() => onNavigate("create-account")}
+                onClick={() => navigate("/register")}
                 className="text-primary hover:text-primary-dark font-semibold transition-colors ml-1"
               >
                 Create Account
@@ -155,37 +193,12 @@ function LoginPage({ onNavigate }) {
             </p>
           </div>
 
-          {/* Divider */}
-          <div className="mt-6 mb-6 flex items-center">
-            <div className="flex-1 border-t border-gray-200"></div>
-            <span className="px-4 text-xs text-gray-500">Or continue with</span>
-            <div className="flex-1 border-t border-gray-200"></div>
+          {/* Footer note */}
+          <div className="mt-6 text-center">
+            <p className="text-xs text-gray-500">
+              <i className="fa-solid fa-shield-halved mr-1 text-primary"></i>
+            </p>
           </div>
-
-          {/* Social Login */}
-          <div className="flex gap-3">
-            {[
-              { icon: "fa-google", label: "Google" },
-              { icon: "fa-apple", label: "Apple" },
-              { icon: "fa-microsoft", label: "Microsoft" },
-            ].map(({ icon, label }) => (
-              <button
-                key={label}
-                type="button"
-                className="flex-1 py-3 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-xl transition-all flex items-center justify-center gap-2"
-              >
-                <i className={`fa-brands ${icon} text-gray-700`}></i>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Footer note */}
-        <div className="mt-6 text-center">
-          <p className="text-xs text-gray-500">
-            <i className="fa-solid fa-shield-halved mr-1 text-primary"></i>
-            Your data is protected with 256-bit encryption
-          </p>
         </div>
       </div>
     </div>

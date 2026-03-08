@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../components/DashboardLayout";
 import { NAV_BY_ROLE } from "../components/navConfig";
 
@@ -88,15 +89,6 @@ const stats = [
   },
 ];
 
-// const navItems = [
-//   { icon: 'fa-chart-line', label: 'Dashboard', page: 'admin-dashboard' },
-//   { icon: 'fa-users', label: 'Manage Users', page: 'admin-users' },
-//   { icon: 'fa-brain', label: 'ML Model', page: 'admin-ml' },
-//   { icon: 'fa-chart-pie', label: 'Predictions', page: 'reports' },
-//   { icon: 'fa-file-lines', label: 'System Logs', page: 'admin-logs' },
-// ];
-
-// Simple Bar Chart using SVG
 function BarChart() {
   const data = [
     { day: "Mon", value: 42 },
@@ -156,15 +148,9 @@ function RiskDistribution() {
   );
 }
 
-function AdminDashboard({ onNavigate }) {
-  const [activeNav, setActiveNav] = useState("admin-dashboard");
+function AdminDashboard() {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
-
-  const handleNavigate = (page) => {
-    if (!page) return;
-    setActiveNav(page);
-    onNavigate(page);
-  };
 
   const filteredUsers = users.filter(
     (u) =>
@@ -175,8 +161,6 @@ function AdminDashboard({ onNavigate }) {
   return (
     <DashboardLayout
       navItems={NAV_BY_ROLE.admin}
-      activePage={activeNav}
-      onNavigate={handleNavigate}
       title="System Analytics"
       subtitle="Admin Panel"
       headerActions={
@@ -210,7 +194,9 @@ function AdminDashboard({ onNavigate }) {
                 {s.badge}
               </span>
             </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-1">{s.value}</h3>
+            <h3 className="text-2xl font-bold text-gray-900 mb-1 text-right">
+              {s.value}
+            </h3>
             <p className="text-sm text-gray-500">{s.label}</p>
           </div>
         ))}
