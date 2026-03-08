@@ -143,12 +143,6 @@ export default function Sidebar({
       <div
         className={`p-4 border-t border-slate-100 ${collapsed ? "space-y-0" : "space-y-1"}`}
       >
-        <button
-          className={`w-full flex items-center ${collapsed ? "justify-center" : "gap-3"} px-4 py-3 rounded-xl text-slate-500 hover:text-blue-600 hover:bg-slate-50 transition-all`}
-        >
-          <i className="fa-solid fa-gear text-lg w-6 text-center"></i>
-          {!collapsed && <span>Settings</span>}
-        </button>
         <div
           className={`flex items-center ${collapsed ? "justify-center" : "gap-3"} p-3 rounded-xl bg-slate-50 border border-slate-100`}
         >

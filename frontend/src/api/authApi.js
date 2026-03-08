@@ -30,6 +30,7 @@ export const authApi = {
   login: (data) => API.post("/auth/login", data),
   logout: () => API.post("/auth/logout"),
   getMe: () => API.get("/auth/me"),
+  updateStatus: (status) => API.patch("/auth/status", { status }),
 };
 
 export const messageApi = {
@@ -38,6 +39,10 @@ export const messageApi = {
   getUnreadCount: () => API.get("/messages/unread"),
   getConversation: (userId) => API.get(`/messages/${userId}`),
   sendMessage: (data) => API.post("/messages", data),
+};
+
+export const predictionApi = {
+  getHistory: () => API.get("/predictions/history"),
 };
 
 export default API;

@@ -73,10 +73,10 @@ const MessageModel = {
     return rows;
   },
 
-  /** Get list of staff/admin users the patient can message */
+  /** Get list of available healthcare staff the patient can message */
   async getStaffList() {
     const [rows] = await db.query(
-      "SELECT user_id, full_name, role FROM users WHERE role IN ('staff','admin') AND is_active = 1 ORDER BY full_name ASC",
+      "SELECT user_id, full_name, role FROM users WHERE role = 'staff' AND is_active = 1 AND availability_status = 'available' ORDER BY full_name ASC",
     );
     return rows;
   },

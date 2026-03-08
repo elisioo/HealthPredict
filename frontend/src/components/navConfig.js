@@ -25,6 +25,7 @@ export const NAV_BY_ROLE = {
     },
     { icon: "fa-user-doctor", label: "Medical Team", page: "/staff/team" },
     { icon: "fa-message", label: "Messages", page: "/messages" },
+    { icon: "fa-gear", label: "Settings", page: "/settings" },
   ],
   patient: [
     { icon: "fa-chart-line", label: "Dashboard", page: "/dashboard" },

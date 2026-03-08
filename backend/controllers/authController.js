@@ -241,4 +241,29 @@ const refresh = (req, res) => {
   }
 };
 
-module.exports = { register, login, getMe, logout, refresh };
+/**
+ * PATCH /api/auth/status
+ * Staff-only: set availability_status to 'available' or 'unavailable'.
+ */
+const updateStatus = async (req, res) => {
+  const { status } = req.body;
+  if (!["available", "unavailable"].includes(status)) {
+    return res
+      .status(400)
+      .json({ error: "Status must be 'available' or 'unavailable'" });
+  }
+  if (req.user.role !== "staff") {
+    return res
+      .status(403)
+      .json({ error: "Only healthcare staff can update availability" });
+  }
+  try {
+    await UserModel.updateAvailability(req.user.user_id, status);
+    return res.json({ availability_status: status });
+  } catch (err) {
+    console.error("[updateStatus]", err);
+    return res.status(500).json({ error: "Failed to update status" });
+  }
+};
+
+module.exports = { register, login, getMe, logout, refresh, updateStatus };

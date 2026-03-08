@@ -16,7 +16,7 @@ const UserModel = {
   /** Find a user by id */
   async findById(id) {
     const [rows] = await db.query(
-      "SELECT user_id, full_name, email, role, phone, is_active, created_at FROM users WHERE user_id = ? LIMIT 1",
+      "SELECT user_id, full_name, email, role, phone, is_active, availability_status, created_at FROM users WHERE user_id = ? LIMIT 1",
       [id],
     );
     return rows[0] || null;
@@ -45,6 +45,23 @@ const UserModel = {
     await db.query("UPDATE users SET updated_at = NOW() WHERE user_id = ?", [
       userId,
     ]);
+  },
+
+  /** Set staff availability status */
+  async updateAvailability(userId, status) {
+    await db.query(
+      "UPDATE users SET availability_status = ? WHERE user_id = ? AND role = 'staff'",
+      [status, userId],
+    );
+  },
+
+  /** Get current availability status */
+  async getAvailability(userId) {
+    const [rows] = await db.query(
+      "SELECT availability_status FROM users WHERE user_id = ? LIMIT 1",
+      [userId],
+    );
+    return rows[0]?.availability_status ?? 'available';
   },
 };
 

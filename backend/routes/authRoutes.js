@@ -6,6 +6,7 @@ const {
   getMe,
   logout,
   refresh,
+  updateStatus,
 } = require("../controllers/authController");
 const { requireAuth } = require("../middleware/authMiddleware");
 const { authLimiter } = require("../middleware/rateLimitMiddleware");
@@ -89,5 +90,8 @@ router.post("/logout", logout);
 
 // POST /api/auth/refresh
 router.post("/refresh", refresh);
+
+// PATCH /api/auth/status  (staff only)
+router.patch("/status", requireAuth, updateStatus);
 
 module.exports = router;
