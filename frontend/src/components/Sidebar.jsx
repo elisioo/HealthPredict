@@ -108,8 +108,7 @@ export default function Sidebar({
       >
         {navItems.map(({ icon, label, page, badge }) => {
           const isActive = page
-            ? location.pathname === page ||
-              location.pathname.startsWith(page + "/")
+            ? location.pathname === page
             : activeLabel === label;
           return (
             <button
