@@ -42,6 +42,7 @@ export const ROUTES = {
   settings: { path: "/settings", name: "settings" },
 
   // ── Authenticated — All roles ─────────────────────────────────────
+  messages: { path: "/messages", name: "messages" },
   prediction: { path: "/prediction", name: "prediction" },
   result: { path: "/result", name: "result" },
 };

@@ -132,13 +132,6 @@ function UserDashboard() {
         <div>
           <p className="text-gray-600">Keep tracking your metrics daily</p>
         </div>
-        <button
-          onClick={() => navigate("/prediction")}
-          className="w-full sm:w-auto bg-primary hover:bg-primary-dark text-white px-6 py-3 rounded-xl font-medium transition-colors shadow-sm flex items-center justify-center gap-2"
-        >
-          <i className="fa-solid fa-plus"></i>
-          New Prediction
-        </button>
       </div>
 
       {/* Dashboard Cards */}
@@ -233,16 +226,16 @@ function UserDashboard() {
             className="bg-white border border-gray-200 rounded-xl shadow-sm p-5"
           >
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-gray-600 mb-1">{stat.label}</p>
-                <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-              </div>
               <div
                 className={`w-10 h-10 ${stat.bg} rounded-xl flex items-center justify-center`}
               >
                 <i
                   className={`fa-solid ${stat.icon} ${stat.color} text-sm`}
                 ></i>
+              </div>
+              <div>
+                <p className="text-xs text-gray-600 mb-1">{stat.label}</p>
+                <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
               </div>
             </div>
           </div>

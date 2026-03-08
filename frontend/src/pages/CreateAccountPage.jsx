@@ -18,7 +18,7 @@ const FEATURES = [
   "Personalized health insights",
 ];
 
-const ROLES = ["Health User", "Healthcare Staff", "Admin"];
+const ROLES = ["Health User", "Healthcare Staff"];
 
 const PW_REQUIREMENTS = [
   { key: "length", label: "12+ characters" },

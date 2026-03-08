@@ -7,6 +7,7 @@ export const NAV_BY_ROLE = {
     { icon: "fa-brain", label: "ML Model", page: "/admin/ml-model" },
     { icon: "fa-chart-pie", label: "Predictions", page: "/admin/reports" },
     { icon: "fa-file-lines", label: "System Logs", page: "/admin/logs" },
+    { icon: "fa-message", label: "Messages", page: "/messages" },
   ],
   staff: [
     { icon: "fa-house", label: "Dashboard", page: "/staff" },
@@ -23,11 +24,13 @@ export const NAV_BY_ROLE = {
       page: "/admin/reports",
     },
     { icon: "fa-user-doctor", label: "Medical Team", page: "/staff/team" },
+    { icon: "fa-message", label: "Messages", page: "/messages" },
   ],
   patient: [
     { icon: "fa-chart-line", label: "Dashboard", page: "/dashboard" },
     { icon: "fa-stethoscope", label: "New Prediction", page: "/prediction" },
     { icon: "fa-clock-rotate-left", label: "History", page: "/history" },
+    { icon: "fa-message", label: "Messages", page: "/messages" },
     { icon: "fa-user", label: "Profile", page: "/profile" },
     { icon: "fa-gear", label: "Settings", page: "/settings" },
   ],

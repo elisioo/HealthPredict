@@ -32,4 +32,12 @@ export const authApi = {
   getMe: () => API.get("/auth/me"),
 };
 
+export const messageApi = {
+  getInbox: () => API.get("/messages/inbox"),
+  getStaffList: () => API.get("/messages/staff"),
+  getUnreadCount: () => API.get("/messages/unread"),
+  getConversation: (userId) => API.get(`/messages/${userId}`),
+  sendMessage: (data) => API.post("/messages", data),
+};
+
 export default API;
