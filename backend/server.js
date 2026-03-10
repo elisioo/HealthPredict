@@ -10,6 +10,8 @@ const { generalLimiter } = require("./middleware/rateLimitMiddleware");
 const authRoutes = require("./routes/authRoutes");
 const messageRoutes = require("./routes/messageRoutes");
 const predictionRoutes = require("./routes/predictionRoutes");
+const profileRoutes = require("./routes/profileRoutes");
+const appointmentRoutes = require("./routes/appointmentRoutes");
 
 const app = express();
 
@@ -59,6 +61,8 @@ app.get("/", (_req, res) =>
 app.use("/api/auth", authRoutes);
 app.use("/api/messages", messageRoutes);
 app.use("/api/predictions", predictionRoutes);
+app.use("/api/profile", profileRoutes);
+app.use("/api/appointments", appointmentRoutes);
 
 /* ------------------------------------------------------------------ */
 /* 404 + Global error handlers                                          */

@@ -19,6 +19,11 @@ export const NAV_BY_ROLE = {
       badge: "12",
     },
     {
+      icon: "fa-calendar-check",
+      label: "Appointments",
+      page: "/staff/appointments",
+    },
+    {
       icon: "fa-chart-pie",
       label: "Analytics Reports",
       page: "/admin/reports",
@@ -31,6 +36,7 @@ export const NAV_BY_ROLE = {
     { icon: "fa-chart-line", label: "Dashboard", page: "/dashboard" },
     { icon: "fa-stethoscope", label: "New Prediction", page: "/prediction" },
     { icon: "fa-clock-rotate-left", label: "History", page: "/history" },
+    { icon: "fa-calendar-check", label: "Appointments", page: "/appointments" },
     { icon: "fa-message", label: "Messages", page: "/messages" },
     { icon: "fa-user", label: "Profile", page: "/profile" },
     { icon: "fa-gear", label: "Settings", page: "/settings" },

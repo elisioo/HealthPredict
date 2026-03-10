@@ -258,7 +258,7 @@ export default function CreateAccountPage() {
             <div className="mb-8">
               <h1 className="text-2xl font-bold text-slate-900">
                 Create Account
-              </h1>
+              </h1> 
               <p className="text-sm text-slate-500 mt-1">
                 Start your journey to better health monitoring.
               </p>
@@ -267,7 +267,7 @@ export default function CreateAccountPage() {
             <form onSubmit={handleSubmit} className="space-y-5">
               {/* API Error */}
               {apiError && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex items-start gap-2">
+                <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex itRems-start gap-2">
                   <i className="fa-solid fa-circle-exclamation text-red-500 mt-0.5"></i>
                   <p className="text-sm text-red-600">{apiError}</p>
                 </div>

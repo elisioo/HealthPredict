@@ -45,6 +45,13 @@ export const ROUTES = {
   messages: { path: "/messages", name: "messages" },
   prediction: { path: "/prediction", name: "prediction" },
   result: { path: "/result", name: "result" },
+
+  // ── Authenticated — Appointments ──────────────────────────────────
+  appointments: { path: "/appointments", name: "appointments" },
+  staffAppointments: {
+    path: "/staff/appointments",
+    name: "staff-appointments",
+  },
 };
 
 /**

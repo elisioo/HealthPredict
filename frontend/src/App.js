@@ -22,6 +22,8 @@ import HistoryPage from "./pages/HistoryPage";
 import ProfilePage from "./pages/ProfilePage";
 import SettingsPage from "./pages/SettingsPage";
 import MessagesPage from "./pages/MessagesPage";
+import AppointmentsPage from "./pages/AppointmentsPage";
+import StaffAppointmentsPage from "./pages/StaffAppointmentsPage";
 
 /**
  * HealthPredict - App Router
@@ -200,6 +202,26 @@ function App() {
           <Route
             path="*"
             element={<Navigate to={ROUTES.landing.path} replace />}
+          />
+
+          {/* Appointments — Health User */}
+          <Route
+            path={ROUTES.appointments.path}
+            element={
+              <ProtectedRoute roles={["health_user"]}>
+                <AppointmentsPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Appointments — Staff + Admin */}
+          <Route
+            path={ROUTES.staffAppointments.path}
+            element={
+              <ProtectedRoute roles={["admin", "staff"]}>
+                <StaffAppointmentsPage />
+              </ProtectedRoute>
+            }
           />
         </Routes>
       </AuthProvider>

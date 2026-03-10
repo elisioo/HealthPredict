@@ -45,4 +45,19 @@ export const predictionApi = {
   getHistory: () => API.get("/predictions/history"),
 };
 
+export const profileApi = {
+  getHealthProfile: () => API.get("/profile/health"),
+  updateHealthProfile: (data) => API.put("/profile/health", data),
+};
+
+export const appointmentApi = {
+  getMyAppointments: () => API.get("/appointments/my"),
+  getStaffAppointments: () => API.get("/appointments/staff"),
+  getAllAppointments: () => API.get("/appointments/all"),
+  getStaffList: () => API.get("/appointments/staff-list"),
+  bookAppointment: (data) => API.post("/appointments", data),
+  updateStatus: (id, status) =>
+    API.patch(`/appointments/${id}/status`, { status }),
+};
+
 export default API;

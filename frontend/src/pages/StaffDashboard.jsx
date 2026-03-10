@@ -227,7 +227,7 @@ export default function StaffDashboard() {
                   )}
                 </div>
                 <h3 className="text-slate-500 text-sm font-medium">{label}</h3>
-                <p className="text-3xl font-bold text-slate-800 mt-1">
+                <p className="text-3xl font-bold text-slate-800 mt-1 text-right">
                   {value}
                 </p>
               </div>
