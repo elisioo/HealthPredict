@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
-import DashboardLayout from "../components/DashboardLayout";
-import { NAV_BY_ROLE } from "../components/navConfig";
-import { useAuth } from "../context/AuthContext";
-import { profileApi } from "../api/authApi";
+import DashboardLayout from "../../components/DashboardLayout";
+import { NAV_BY_ROLE } from "../../components/navConfig";
+import { useAuth } from "../../context/AuthContext";
+import { profileApi } from "../../api/authApi";
 
 const GENDER_OPTS = [
   { value: "male", label: "Male" },

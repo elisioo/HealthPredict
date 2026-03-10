@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import DashboardLayout from "../components/DashboardLayout";
-import { NAV_BY_ROLE } from "../components/navConfig";
-import { useAuth } from "../context/AuthContext";
+import DashboardLayout from "../../components/DashboardLayout";
+import { NAV_BY_ROLE } from "../../components/navConfig";
+import { useAuth } from "../../context/AuthContext";
 
 const historyData = [
   {

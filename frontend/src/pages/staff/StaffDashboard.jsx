@@ -1,7 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import DashboardLayout from "../components/DashboardLayout";
-import { NAV_BY_ROLE } from "../components/navConfig";
+import DashboardLayout from "../../components/DashboardLayout";
+import { NAV_BY_ROLE } from "../../components/navConfig";
 
 const STATS = [
   {

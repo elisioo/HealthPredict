@@ -1,8 +1,8 @@
 import React, { useState } from "react";
-import DashboardLayout from "../components/DashboardLayout";
-import { NAV_BY_ROLE } from "../components/navConfig";
-import { useAuth } from "../context/AuthContext";
-import { authApi } from "../api/authApi";
+import DashboardLayout from "../../components/DashboardLayout";
+import { NAV_BY_ROLE } from "../../components/navConfig";
+import { useAuth } from "../../context/AuthContext";
+import { authApi } from "../../api/authApi";
 
 export default function SettingsPage() {
   const { user } = useAuth();

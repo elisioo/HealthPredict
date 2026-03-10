@@ -4,26 +4,36 @@ import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import GuestRoute from "./components/GuestRoute";
 import ROUTES from "./routes";
-import LandingPage from "./pages/LandingPage";
-import LoginPage from "./pages/LoginPage";
-import CreateAccountPage from "./pages/CreateAccountPage";
+
+// auth (public / guest)
+import LandingPage from "./pages/auth/LandingPage";
+import LoginPage from "./pages/auth/LoginPage";
+import CreateAccountPage from "./pages/auth/CreateAccountPage";
+
+// admin
 import AdminDashboard from "./pages/admin/AdminDashboard";
-import StaffDashboard from "./pages/StaffDashboard";
-import UserDashboard from "./pages/UserDashboard";
-import PredictionPage from "./pages/PredictionPage";
-import ResultPage from "./pages/ResultPage";
-import PatientRecordsPage from "./pages/PatientRecordsPage";
-import ReportsPage from "./pages/ReportsPage";
-import ManageUsersPage from "./pages/ManageUsersPage";
+import ManageUsersPage from "./pages/admin/ManageUsersPage";
+import ReportsPage from "./pages/admin/ReportsPage";
 import MLModelPage from "./pages/admin/MLModelPage";
 import SystemLogsPage from "./pages/admin/SystemLogsPage";
 import MedicalTeamPage from "./pages/admin/MedicalTeamPage";
-import HistoryPage from "./pages/HistoryPage";
-import ProfilePage from "./pages/ProfilePage";
-import SettingsPage from "./pages/SettingsPage";
-import MessagesPage from "./pages/MessagesPage";
-import AppointmentsPage from "./pages/AppointmentsPage";
-import StaffAppointmentsPage from "./pages/StaffAppointmentsPage";
+
+// staff
+import StaffDashboard from "./pages/staff/StaffDashboard";
+import PatientRecordsPage from "./pages/staff/PatientRecordsPage";
+import StaffAppointmentsPage from "./pages/staff/StaffAppointmentsPage";
+
+// patient
+import UserDashboard from "./pages/patient/UserDashboard";
+import HistoryPage from "./pages/patient/HistoryPage";
+import AppointmentsPage from "./pages/patient/AppointmentsPage";
+
+// shared (all authenticated roles)
+import PredictionPage from "./pages/shared/PredictionPage";
+import ResultPage from "./pages/shared/ResultPage";
+import MessagesPage from "./pages/shared/MessagesPage";
+import ProfilePage from "./pages/shared/ProfilePage";
+import SettingsPage from "./pages/shared/SettingsPage";
 
 /**
  * HealthPredict - App Router

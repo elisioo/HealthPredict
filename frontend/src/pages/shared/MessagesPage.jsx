@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
-import DashboardLayout from "../components/DashboardLayout";
-import { NAV_BY_ROLE } from "../components/navConfig";
-import { useAuth } from "../context/AuthContext";
-import { messageApi, predictionApi } from "../api/authApi";
+import DashboardLayout from "../../components/DashboardLayout";
+import { NAV_BY_ROLE } from "../../components/navConfig";
+import { useAuth } from "../../context/AuthContext";
+import { messageApi, predictionApi } from "../../api/authApi";
 
 /* ------------------------------------------------------------------ */
 /* Report message encoding / decoding                                   */

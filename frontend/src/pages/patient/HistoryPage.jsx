@@ -1,7 +1,7 @@
 import React from "react";
-import DashboardLayout from "../components/DashboardLayout";
-import { NAV_BY_ROLE } from "../components/navConfig";
-import { useAuth } from "../context/AuthContext";
+import DashboardLayout from "../../components/DashboardLayout";
+import { NAV_BY_ROLE } from "../../components/navConfig";
+import { useAuth } from "../../context/AuthContext";
 
 export default function HistoryPage() {
   const { user } = useAuth();

@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useCallback } from "react";
-import DashboardLayout from "../components/DashboardLayout";
-import { NAV_BY_ROLE } from "../components/navConfig";
-import { useAuth } from "../context/AuthContext";
-import { appointmentApi } from "../api/authApi";
+import DashboardLayout from "../../components/DashboardLayout";
+import { NAV_BY_ROLE } from "../../components/navConfig";
+import { useAuth } from "../../context/AuthContext";
+import { appointmentApi } from "../../api/authApi";
 
 /* ------------------------------------------------------------------ */
 /* Helpers                                                              */
