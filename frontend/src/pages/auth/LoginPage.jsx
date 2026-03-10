@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import ReCAPTCHA from "react-google-recaptcha";
 import { useAuth } from "../../context/AuthContext";
@@ -10,6 +10,38 @@ const ROLE_PATHS = {
   staff: "/staff",
   health_user: "/dashboard",
 };
+
+/* ------------------------------------------------------------------ */
+/* Lockout countdown hook                                               */
+/* ------------------------------------------------------------------ */
+function useCountdown(targetIso) {
+  const [secsLeft, setSecsLeft] = useState(0);
+
+  useEffect(() => {
+    if (!targetIso) {
+      setSecsLeft(0);
+      return;
+    }
+    const tick = () => {
+      const diff = Math.max(
+        0,
+        Math.ceil((new Date(targetIso) - Date.now()) / 1000),
+      );
+      setSecsLeft(diff);
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [targetIso]);
+
+  return secsLeft;
+}
+
+function fmtCountdown(secs) {
+  const m = Math.floor(secs / 60);
+  const s = secs % 60;
+  return m > 0 ? `${m}m ${s}s` : `${s}s`;
+}
 
 function LoginPage() {
   const { login } = useAuth();
@@ -24,10 +56,16 @@ function LoginPage() {
   const [captchaToken, setCaptchaToken] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [lockedUntil, setLockedUntil] = useState(null); // ISO string or null
+
+  const countdown = useCountdown(lockedUntil);
+  const isLocked = countdown > 0;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+
+    if (isLocked) return; // block submit while locked
 
     if (!captchaToken) {
       setError("Please complete the CAPTCHA verification.");
@@ -41,12 +79,18 @@ function LoginPage() {
       const dest = from || ROLE_PATHS[user.role] || "/dashboard";
       navigate(dest, { replace: true });
     } catch (err) {
-      const msg =
-        err.response?.data?.error ||
-        err.response?.data?.errors?.[0]?.msg ||
-        "Login failed. Please check your credentials.";
-      setError(msg);
-      // Reset CAPTCHA on failure
+      // HTTP 423 = account locked
+      if (err.response?.status === 423) {
+        const data = err.response.data;
+        setLockedUntil(data.locked_until || null);
+        setError(""); // lockout banner replaces error text
+      } else {
+        const msg =
+          err.response?.data?.error ||
+          err.response?.data?.errors?.[0]?.msg ||
+          "Login failed. Please check your credentials.";
+        setError(msg);
+      }
       recaptchaRef.current?.reset();
       setCaptchaToken(null);
     } finally {
@@ -83,8 +127,34 @@ function LoginPage() {
             </p>
           </div>
 
+          {/* Lockout Banner */}
+          {isLocked && (
+            <div className="mb-4 p-4 bg-orange-50 border border-orange-200 rounded-xl">
+              <div className="flex items-center gap-2 mb-1">
+                <i className="fa-solid fa-lock text-orange-500 text-base"></i>
+                <span className="text-sm font-semibold text-orange-700">
+                  Account Temporarily Locked
+                </span>
+              </div>
+              <p className="text-xs text-orange-600 mb-2">
+                Too many failed login attempts. Please wait before trying again.
+              </p>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 bg-orange-200 rounded-full h-2 overflow-hidden">
+                  {/* progress bar shrinks as countdown ticks */}
+                </div>
+                <span className="text-sm font-mono font-bold text-orange-700 min-w-[48px] text-right">
+                  {fmtCountdown(countdown)}
+                </span>
+              </div>
+              <p className="text-xs text-orange-500 mt-1">
+                Contact an administrator to unlock immediately.
+              </p>
+            </div>
+          )}
+
           {/* Error Alert */}
-          {error && (
+          {!isLocked && error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl flex items-start gap-2">
               <i className="fa-solid fa-circle-exclamation text-red-500 mt-0.5"></i>
               <p className="text-sm text-red-600">{error}</p>
@@ -165,13 +235,18 @@ function LoginPage() {
             {/* Submit */}
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || isLocked}
               className="w-full bg-primary hover:bg-primary-dark text-white font-semibold py-3 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {loading ? (
                 <>
                   <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
                   Signing in…
+                </>
+              ) : isLocked ? (
+                <>
+                  <i className="fa-solid fa-lock"></i>
+                  Locked — {fmtCountdown(countdown)}
                 </>
               ) : (
                 "Sign In"

@@ -183,16 +183,49 @@ const login = async (req, res) => {
       .json({ error: "Account is deactivated. Contact admin." });
   }
 
-  // 4. Verify password
-  const match = await bcrypt.compare(password, user.password_hash);
-  if (!match) {
-    return res.status(401).json({ error: "Invalid credentials" });
+  // 4. Check lockout
+  if (user.locked_until && new Date(user.locked_until) > new Date()) {
+    const secsLeft = Math.ceil(
+      (new Date(user.locked_until) - Date.now()) / 1000,
+    );
+    return res.status(423).json({
+      error:
+        "Account is temporarily locked due to too many failed login attempts.",
+      locked_until: user.locked_until,
+      seconds_left: secsLeft,
+    });
   }
 
-  // 5. Update last seen
+  // 5. Verify password
+  const match = await bcrypt.compare(password, user.password_hash);
+  if (!match) {
+    const attempt = await UserModel.recordFailedAttempt(user.user_id);
+    const remaining = UserModel.MAX_ATTEMPTS - attempt.login_attempts;
+
+    if (attempt.login_attempts >= UserModel.MAX_ATTEMPTS) {
+      const secsLeft = Math.ceil(
+        (new Date(attempt.locked_until) - Date.now()) / 1000,
+      );
+      return res.status(423).json({
+        error: "Account locked after too many failed attempts.",
+        locked_until: attempt.locked_until,
+        seconds_left: secsLeft,
+      });
+    }
+
+    return res.status(401).json({
+      error: `Invalid credentials. ${remaining} attempt${remaining !== 1 ? "s" : ""} remaining before lockout.`,
+      attempts_remaining: remaining,
+    });
+  }
+
+  // 6. Successful login — reset counter
+  await UserModel.resetLoginAttempts(user.user_id);
+
+  // 7. Update last seen
   await UserModel.updateLastSeen(user.user_id);
 
-  // 6. Issue tokens
+  // 8. Issue tokens
   return sendTokens(res, user, 200);
 };
 

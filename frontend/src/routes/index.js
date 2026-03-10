@@ -32,6 +32,9 @@ export const ROUTES = {
   mlModel: { path: "/admin/ml-model", name: "ml-model" },
   systemLogs: { path: "/admin/logs", name: "system-logs" },
   reports: { path: "/admin/reports", name: "reports" },
+  activityMonitor: { path: "/admin/activity", name: "activity-monitor" },
+  predictionsReport: { path: "/admin/predictions", name: "predictions-report" },
+  adminMessages: { path: "/admin/messages", name: "admin-messages" },
 
   // ── Authenticated — Staff + Admin ─────────────────────────────────
   medicalTeam: { path: "/staff/team", name: "medical-team" },

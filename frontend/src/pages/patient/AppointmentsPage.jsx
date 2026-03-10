@@ -255,7 +255,7 @@ export default function AppointmentsPage() {
       navItems={navItems}
       title="My Appointments"
       subtitle="Schedule and manage your health consultations"
-      brandTitle="HealthPredict"
+      brandTitle="Glucogu"
       brandSubtitle="Patient Portal"
     >
       <div className="p-4 sm:p-8 max-w-4xl mx-auto">

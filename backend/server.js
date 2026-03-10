@@ -12,6 +12,8 @@ const messageRoutes = require("./routes/messageRoutes");
 const predictionRoutes = require("./routes/predictionRoutes");
 const profileRoutes = require("./routes/profileRoutes");
 const appointmentRoutes = require("./routes/appointmentRoutes");
+const adminRoutes = require("./routes/adminRoutes");
+const { processDeletions } = require("./controllers/adminController");
 
 const app = express();
 
@@ -63,6 +65,7 @@ app.use("/api/messages", messageRoutes);
 app.use("/api/predictions", predictionRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/appointments", appointmentRoutes);
+app.use("/api/admin", adminRoutes);
 
 /* ------------------------------------------------------------------ */
 /* 404 + Global error handlers                                          */
@@ -89,4 +92,7 @@ app.use((err, _req, res, _next) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 HealthPredict API running on http://localhost:${PORT}`);
+
+  // Run scheduled-deletion worker every 30 seconds
+  setInterval(processDeletions, 30_000);
 });

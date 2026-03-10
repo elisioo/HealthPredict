@@ -138,8 +138,7 @@ export default function StaffAppointmentsPage() {
       navItems={navItems}
       title="Appointments"
       subtitle="Manage patient consultation schedules"
-      brandTitle="HealthPredict"
-      brandSubtitle={user?.role === "admin" ? "Admin Panel" : "Staff Portal"}
+      brandTitle="Glucogu"
     >
       <div className="p-4 sm:p-8">
         {/* Header */}

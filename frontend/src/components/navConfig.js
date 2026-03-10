@@ -4,10 +4,29 @@ export const NAV_BY_ROLE = {
   admin: [
     { icon: "fa-chart-line", label: "Dashboard", page: "/admin" },
     { icon: "fa-users", label: "Manage Users", page: "/admin/users" },
+    {
+      icon: "fa-wave-square",
+      label: "Activity Monitor",
+      page: "/admin/activity",
+    },
+    {
+      icon: "fa-stethoscope",
+      label: "Predictions",
+      page: "/admin/predictions",
+    },
+    { icon: "fa-chart-pie", label: "Reports", page: "/admin/reports" },
     { icon: "fa-brain", label: "ML Model", page: "/admin/ml-model" },
-    { icon: "fa-chart-pie", label: "Predictions", page: "/admin/reports" },
     { icon: "fa-file-lines", label: "System Logs", page: "/admin/logs" },
-    { icon: "fa-message", label: "Messages", page: "/messages" },
+    {
+      icon: "fa-calendar-check",
+      label: "Appointments",
+      page: "/staff/appointments",
+    },
+    {
+      icon: "fa-envelope-open-text",
+      label: "Messages",
+      page: "/admin/messages",
+    },
   ],
   staff: [
     { icon: "fa-house", label: "Dashboard", page: "/staff" },

@@ -60,4 +60,26 @@ export const appointmentApi = {
     API.patch(`/appointments/${id}/status`, { status }),
 };
 
+export const adminApi = {
+  getUsers: (params) => API.get("/admin/users", { params }),
+  getStats: () => API.get("/admin/stats"),
+  activateUser: (id) => API.patch(`/admin/users/${id}/activate`),
+  deactivateUser: (id) => API.patch(`/admin/users/${id}/deactivate`),
+  changeRole: (id, role) => API.patch(`/admin/users/${id}/role`, { role }),
+  scheduleDelete: (id) => API.delete(`/admin/users/${id}`),
+  getLogs: (params) => API.get("/admin/logs", { params }),
+  getActivity: () => API.get("/admin/activity"),
+  // Locked accounts
+  getLockedAccounts: () => API.get("/admin/locked-accounts"),
+  unlockUser: (id) => API.patch(`/admin/users/${id}/unlock`),
+  // Predictions report
+  getAllPredictions: (params) => API.get("/admin/predictions", { params }),
+  // Messages admin
+  getMessageThreads: () => API.get("/admin/messages/threads"),
+  getAdminConversation: (u1, u2) => API.get(`/admin/messages/${u1}/${u2}`),
+  deleteAdminMessage: (msgId) => API.delete(`/admin/messages/${msgId}`),
+  deleteAdminThread: (u1, u2) =>
+    API.delete(`/admin/messages/thread/${u1}/${u2}`),
+};
+
 export default API;
