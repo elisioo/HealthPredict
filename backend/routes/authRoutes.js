@@ -7,6 +7,8 @@ const {
   logout,
   refresh,
   updateStatus,
+  forgotPassword,
+  resetPassword,
 } = require("../controllers/authController");
 const { requireAuth } = require("../middleware/authMiddleware");
 const { authLimiter } = require("../middleware/rateLimitMiddleware");
@@ -72,6 +74,31 @@ const loginValidation = [
   body("password").notEmpty().withMessage("Password is required"),
 ];
 
+const forgotPasswordValidation = [
+  body("email").trim().isEmail().withMessage("A valid email is required"),
+];
+
+const resetPasswordValidation = [
+  body("email").trim().isEmail().withMessage("A valid email is required"),
+  body("code")
+    .trim()
+    .isLength({ min: 6, max: 6 })
+    .withMessage("Reset code must be 6 digits")
+    .isNumeric()
+    .withMessage("Reset code must be numeric"),
+  body("newPassword")
+    .isLength({ min: 12 })
+    .withMessage("Password must be at least 12 characters")
+    .matches(/[A-Z]/)
+    .withMessage("Password must contain an uppercase letter")
+    .matches(/[a-z]/)
+    .withMessage("Password must contain a lowercase letter")
+    .matches(/[0-9]/)
+    .withMessage("Password must contain a number")
+    .matches(/[^A-Za-z0-9]/)
+    .withMessage("Password must contain a special character"),
+];
+
 /* ------------------------------------------------------------------ */
 /* Routes                                                               */
 /* ------------------------------------------------------------------ */
@@ -85,7 +112,7 @@ router.post("/login", authLimiter, loginValidation, login);
 // GET  /api/auth/me  (protected)
 router.get("/me", requireAuth, getMe);
 
-// POST /api/auth/logout
+// POST /api/auth/logout (auth optional — works even if token is expired)
 router.post("/logout", logout);
 
 // POST /api/auth/refresh
@@ -93,5 +120,21 @@ router.post("/refresh", refresh);
 
 // PATCH /api/auth/status  (staff only)
 router.patch("/status", requireAuth, updateStatus);
+
+// POST /api/auth/forgot-password
+router.post(
+  "/forgot-password",
+  authLimiter,
+  forgotPasswordValidation,
+  forgotPassword,
+);
+
+// POST /api/auth/reset-password
+router.post(
+  "/reset-password",
+  authLimiter,
+  resetPasswordValidation,
+  resetPassword,
+);
 
 module.exports = router;

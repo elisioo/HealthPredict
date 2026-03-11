@@ -31,6 +31,8 @@ export const authApi = {
   logout: () => API.post("/auth/logout"),
   getMe: () => API.get("/auth/me"),
   updateStatus: (status) => API.patch("/auth/status", { status }),
+  forgotPassword: (email) => API.post("/auth/forgot-password", { email }),
+  resetPassword: (data) => API.post("/auth/reset-password", data),
 };
 
 export const messageApi = {
@@ -42,6 +44,7 @@ export const messageApi = {
 };
 
 export const predictionApi = {
+  predict: (data) => API.post("/predictions/predict", data),
   getHistory: () => API.get("/predictions/history"),
 };
 

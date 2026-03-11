@@ -1,6 +1,7 @@
 const express = require("express");
 const { body } = require("express-validator");
 const { requireAuth } = require("../middleware/authMiddleware");
+const { messageLimiter } = require("../middleware/rateLimitMiddleware");
 const {
   getInbox,
   getStaffList,
@@ -29,6 +30,7 @@ router.get("/:userId", getConversation);
 // POST /api/messages           — send a message
 router.post(
   "/",
+  messageLimiter,
   [
     body("receiver_id").isInt({ min: 1 }).withMessage("Invalid receiver"),
     body("message")

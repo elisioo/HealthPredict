@@ -5,6 +5,7 @@ const cors = require("cors");
 const helmet = require("helmet");
 const cookieParser = require("cookie-parser");
 const { generalLimiter } = require("./middleware/rateLimitMiddleware");
+const sanitizeInput = require("./middleware/sanitize");
 
 // Routes
 const authRoutes = require("./routes/authRoutes");
@@ -21,14 +22,24 @@ const app = express();
 /* Security Middleware                                                   */
 /* ------------------------------------------------------------------ */
 
-// HTTP security headers
+// HTTP security headers (helmet + additional hardening)
 app.use(helmet());
 
-// CORS — allow the React dev server
+// Permissions-Policy header — disable unused browser APIs
+app.use((_req, res, next) => {
+  res.setHeader(
+    "Permissions-Policy",
+    "geolocation=(), microphone=(), camera=(), payment=()",
+  );
+  next();
+});
+
+// CORS — allow the React dev server with preflight caching
 app.use(
   cors({
     origin: process.env.CLIENT_URL || "http://localhost:3001",
     credentials: true, // allow cookies
+    maxAge: 3600, // cache preflight responses for 1 hour
   }),
 );
 
@@ -38,6 +49,9 @@ app.use(express.urlencoded({ extended: false }));
 
 // Cookie parser (required for httpOnly cookie auth)
 app.use(cookieParser());
+
+// Strip HTML tags from all incoming string values (XSS prevention)
+app.use(sanitizeInput);
 
 // General rate limit on all /api routes
 app.use("/api", generalLimiter);

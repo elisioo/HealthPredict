@@ -112,7 +112,9 @@ function LoginPage() {
                 <h1 className="text-2xl font-semibold text-gray-900">
                   Glucogu
                 </h1>
-                <p className="text-xs text-gray-500">powered by LR Model</p>
+                <p className="text-xs text-gray-500">
+                  powered by trained model
+                </p>
               </div>
             </div>
           </div>
@@ -214,12 +216,13 @@ function LoginPage() {
 
             {/* Forgot Password */}
             <div className="flex items-center justify-end">
-              <a
-                href="#"
+              <button
+                type="button"
+                onClick={() => navigate("/forgot-password")}
                 className="text-sm text-primary hover:text-primary-dark font-medium transition-colors"
               >
                 Forgot password?
-              </a>
+              </button>
             </div>
 
             {/* CAPTCHA */}

@@ -10,6 +10,7 @@ import ROUTES from "./routes";
 import LandingPage from "./pages/auth/LandingPage";
 import LoginPage from "./pages/auth/LoginPage";
 import CreateAccountPage from "./pages/auth/CreateAccountPage";
+import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
 
 // admin
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -77,6 +78,14 @@ function App() {
               element={
                 <GuestRoute>
                   <CreateAccountPage />
+                </GuestRoute>
+              }
+            />
+            <Route
+              path={ROUTES.forgotPassword.path}
+              element={
+                <GuestRoute>
+                  <ForgotPasswordPage />
                 </GuestRoute>
               }
             />

@@ -18,6 +18,7 @@ export const ROUTES = {
   // ── Guest-only (redirects authed users to their dashboard) ───────
   login: { path: "/login", name: "login" },
   register: { path: "/register", name: "register" },
+  forgotPassword: { path: "/forgot-password", name: "forgot-password" },
 
   // ── Authenticated — Health User ───────────────────────────────────
   userDashboard: { path: "/dashboard", name: "user-dashboard" },

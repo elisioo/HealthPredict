@@ -4,49 +4,74 @@ import DashboardLayout from "../../components/DashboardLayout";
 import { NAV_BY_ROLE } from "../../components/navConfig";
 import { useAuth } from "../../context/AuthContext";
 
-// Risk configurations
+// Risk configuration by level
 const riskConfig = {
   high: {
     label: "HIGH",
     sublabel: "RISK",
-    probability: "78%",
     borderColor: "border-red-500",
     bgColor: "bg-red-50",
     textColor: "text-red-600",
-    badgeBg: "bg-red-50",
     message:
-      "Based on your health profile, you have a high probability of developing diabetes within the next 5-10 years. This assessment considers factors such as your BMI, family history, lifestyle patterns, and other health indicators.",
+      "Based on your health profile, you have a high probability of developing diabetes. This assessment is based on your BMI, blood glucose, HbA1c, and other health indicators. Please consult a healthcare professional as soon as possible.",
   },
-  medium: {
-    label: "MEDIUM",
+  moderate: {
+    label: "MODERATE",
     sublabel: "RISK",
-    probability: "45%",
     borderColor: "border-yellow-500",
     bgColor: "bg-yellow-50",
     textColor: "text-yellow-600",
-    badgeBg: "bg-yellow-50",
     message:
-      "Your health profile indicates a moderate diabetes risk. Consider making lifestyle improvements and scheduling regular check-ups to monitor your progress.",
+      "Your health profile indicates a moderate diabetes risk. Consider making lifestyle improvements and scheduling regular check-ups with your healthcare provider to monitor your progress.",
   },
   low: {
     label: "LOW",
     sublabel: "RISK",
-    probability: "15%",
     borderColor: "border-green-500",
     bgColor: "bg-green-50",
     textColor: "text-green-600",
-    badgeBg: "bg-green-50",
     message:
       "Great news! Your health profile indicates a low risk of developing diabetes. Maintain your healthy lifestyle and continue with regular medical check-ups.",
   },
+};
+
+const recommendationsByRisk = {
+  high: [
+    "Consult a healthcare provider urgently — within the next 1–2 weeks",
+    "Undergo a formal fasting glucose and HbA1c blood test",
+    "Begin a structured diet plan limiting refined sugars and processed foods",
+    "Aim for at least 150 minutes of moderate aerobic exercise per week",
+    "Monitor your blood glucose levels regularly at home",
+  ],
+  moderate: [
+    "Schedule a check-up with your healthcare provider in the next month",
+    "Reduce intake of sugary drinks and high-glycaemic foods",
+    "Increase daily physical activity — walking 30 minutes a day is a great start",
+    "Maintain a healthy weight through balanced nutrition",
+    "Track your blood pressure regularly",
+  ],
+  low: [
+    "Continue your current healthy lifestyle habits",
+    "Get an annual general health check-up",
+    "Stay hydrated and maintain a balanced diet",
+    "Stay physically active and manage stress levels",
+    "Re-assess your diabetes risk annually or if your health status changes",
+  ],
 };
 
 function ResultPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
-  const riskLevel = location.state?.riskLevel || "high";
-  const config = riskConfig[riskLevel] || riskConfig.high;
+
+  // Real data passed from PredictionPage via navigate state
+  const riskLevel = location.state?.riskLevel ?? "low";
+  const probability = location.state?.probability ?? null; // number, e.g. 42.01
+  const diabetesResult = location.state?.diabetesResult ?? null; // 0 or 1
+
+  const config = riskConfig[riskLevel] ?? riskConfig.low;
+  const recommendations =
+    recommendationsByRisk[riskLevel] ?? recommendationsByRisk.low;
 
   const roleNav =
     user?.role === "admin"
@@ -55,12 +80,12 @@ function ResultPage() {
         ? NAV_BY_ROLE.staff
         : NAV_BY_ROLE.patient;
 
-  const recommendations = [
-    "Schedule an appointment with your healthcare provider within 2 weeks",
-    "Consider dietary modifications and regular exercise routine",
-    "Monitor blood glucose levels regularly",
-    "Maintain a healthy weight and active lifestyle",
-  ];
+  const dashboardPath =
+    user?.role === "admin"
+      ? "/admin/dashboard"
+      : user?.role === "staff"
+        ? "/staff/dashboard"
+        : "/dashboard";
 
   return (
     <DashboardLayout
@@ -95,7 +120,7 @@ function ResultPage() {
               >
                 <div className="text-center">
                   <div
-                    className={`text-3xl sm:text-4xl font-bold ${config.textColor} mb-1`}
+                    className={`text-2xl sm:text-3xl font-bold ${config.textColor} mb-1`}
                   >
                     {config.label}
                   </div>
@@ -105,14 +130,23 @@ function ResultPage() {
                 </div>
               </div>
 
-              {/* Probability */}
+              {/* Probability — from real model output */}
               <div className="mb-8">
-                <div className="text-5xl sm:text-6xl font-bold text-gray-900 mb-2">
-                  {config.probability}
+                <div
+                  className={`text-5xl sm:text-6xl font-bold mb-2 ${config.textColor}`}
+                >
+                  {probability !== null ? `${probability}%` : "—"}
                 </div>
-                <p className="text-gray-600 text-lg">
-                  Probability of Developing Diabetes
-                </p>
+                <p className="text-gray-600 text-lg">Model Probability Score</p>
+                {diabetesResult !== null && (
+                  <p
+                    className={`mt-2 text-sm font-medium ${diabetesResult === 1 ? "text-red-600" : "text-green-600"}`}
+                  >
+                    {diabetesResult === 1
+                      ? "⚠ Diabetes Indicated by Model"
+                      : "✓ No Diabetes Indicated by Model"}
+                  </p>
+                )}
               </div>
 
               {/* Explanation */}
@@ -144,48 +178,43 @@ function ResultPage() {
 
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <button className="w-full sm:w-auto bg-primary hover:bg-primary-dark text-white font-medium py-3 px-8 rounded-xl transition-colors flex items-center justify-center gap-2">
-                  <i className="fa-solid fa-save"></i>
-                  Save Result
-                </button>
                 <button
                   onClick={() => navigate("/prediction")}
-                  className="w-full sm:w-auto bg-white hover:bg-gray-50 text-gray-700 font-medium py-3 px-8 rounded-xl border border-gray-300 transition-colors flex items-center justify-center gap-2"
+                  className="w-full sm:w-auto bg-primary hover:bg-primary-dark text-white font-medium py-3 px-8 rounded-xl transition-colors flex items-center justify-center gap-2"
                 >
                   <i className="fa-solid fa-plus"></i>
                   New Prediction
+                </button>
+                <button
+                  onClick={() => navigate(dashboardPath)}
+                  className="w-full sm:w-auto bg-white hover:bg-gray-50 text-gray-700 font-medium py-3 px-8 rounded-xl border border-gray-300 transition-colors flex items-center justify-center gap-2"
+                >
+                  <i className="fa-solid fa-house"></i>
+                  Back to Dashboard
                 </button>
               </div>
             </div>
 
             {/* Disclaimer */}
             <div className="bg-gray-50 px-6 sm:px-8 py-4 border-t border-gray-100">
-              <div className="flex items-center justify-center text-sm text-gray-500 gap-2">
-                <i className="fa-solid fa-shield-alt text-primary"></i>
+              <div className="flex items-center justify-center text-sm text-gray-500 gap-2 text-center">
+                <i className="fa-solid fa-shield-alt text-primary flex-shrink-0"></i>
                 <span>
                   This assessment is for informational purposes only and should
-                  not replace professional medical advice
+                  not replace professional medical advice.
                 </span>
               </div>
             </div>
           </div>
 
-          {/* Quick Actions */}
-          <div className="mt-6 flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="flex items-center justify-center gap-2 text-gray-600 hover:text-primary transition-colors text-sm">
-              <i className="fa-solid fa-download"></i>
-              Download PDF Report
-            </button>
-            <button className="flex items-center justify-center gap-2 text-gray-600 hover:text-primary transition-colors text-sm">
-              <i className="fa-solid fa-share"></i>
-              Share with Doctor
-            </button>
+          {/* View History */}
+          <div className="mt-6 flex justify-center">
             <button
-              onClick={() => navigate("/dashboard")}
+              onClick={() => navigate("/history")}
               className="flex items-center justify-center gap-2 text-gray-600 hover:text-primary transition-colors text-sm"
             >
-              <i className="fa-solid fa-history"></i>
-              View History
+              <i className="fa-solid fa-clock-rotate-left"></i>
+              View Prediction History
             </button>
           </div>
         </div>

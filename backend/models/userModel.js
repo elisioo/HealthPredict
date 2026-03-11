@@ -253,6 +253,14 @@ const UserModel = {
     );
   },
 
+  /** Update a user's password hash */
+  async updatePassword(userId, passwordHash) {
+    await db.query("UPDATE users SET password_hash = ? WHERE user_id = ?", [
+      passwordHash,
+      userId,
+    ]);
+  },
+
   async getLockedAccounts() {
     const [rows] = await db.query(
       `SELECT user_id, full_name, email, role, login_attempts, locked_until

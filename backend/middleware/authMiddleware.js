@@ -1,5 +1,6 @@
 const jwt = require("jsonwebtoken");
 const UserModel = require("../models/userModel");
+const tokenBlacklist = require("./tokenBlacklist");
 
 const requireAuth = async (req, res, next) => {
   let token = null;
@@ -17,6 +18,11 @@ const requireAuth = async (req, res, next) => {
     return res.status(401).json({ error: "Unauthorised — no token provided" });
   }
 
+  // Check token blacklist (revoked on logout)
+  if (tokenBlacklist.isBlacklisted(token)) {
+    return res.status(401).json({ error: "Token has been revoked" });
+  }
+
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
@@ -29,6 +35,7 @@ const requireAuth = async (req, res, next) => {
     }
 
     req.user = user;
+    req.token = token; // store for logout blacklisting
     next();
   } catch (err) {
     if (err.name === "TokenExpiredError") {

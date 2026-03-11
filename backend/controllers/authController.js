@@ -3,6 +3,10 @@ const jwt = require("jsonwebtoken");
 const { validationResult } = require("express-validator");
 const UserModel = require("../models/userModel");
 const axios = require("axios");
+const tokenBlacklist = require("../middleware/tokenBlacklist");
+const { logAction } = require("../middleware/auditLogger");
+const otpStore = require("../middleware/otpStore");
+const { sendResetCode } = require("../services/emailService");
 
 const SALT_ROUNDS = 12;
 
@@ -202,9 +206,21 @@ const login = async (req, res) => {
     const attempt = await UserModel.recordFailedAttempt(user.user_id);
     const remaining = UserModel.MAX_ATTEMPTS - attempt.login_attempts;
 
+    // Log the failed attempt
+    await logAction(
+      req,
+      "login_failure",
+      `Failed login attempt for ${user.email} (attempt ${attempt.login_attempts}/${UserModel.MAX_ATTEMPTS})`,
+    );
+
     if (attempt.login_attempts >= UserModel.MAX_ATTEMPTS) {
       const secsLeft = Math.ceil(
         (new Date(attempt.locked_until) - Date.now()) / 1000,
+      );
+      await logAction(
+        req,
+        "account_locked",
+        `Account locked for ${user.email} after ${UserModel.MAX_ATTEMPTS} failed attempts`,
       );
       return res.status(423).json({
         error: "Account locked after too many failed attempts.",
@@ -225,7 +241,14 @@ const login = async (req, res) => {
   // 7. Update last seen
   await UserModel.updateLastSeen(user.user_id);
 
-  // 8. Issue tokens
+  // 8. Log successful login
+  await logAction(
+    req,
+    "login_success",
+    `User ${user.email} logged in successfully`,
+  );
+
+  // 9. Issue tokens
   return sendTokens(res, user, 200);
 };
 
@@ -239,11 +262,38 @@ const getMe = async (req, res) => {
 };
 
 /**
- * POST /api/auth/logout — clears cookies
+ * POST /api/auth/logout — clears cookies and blacklists the current token
  */
 const logout = (req, res) => {
-  res.clearCookie("token");
-  res.clearCookie("refreshToken");
+  // Blacklist the current access token so it can't be reused
+  const token =
+    req.cookies?.token ||
+    (req.headers["authorization"]?.startsWith("Bearer ")
+      ? req.headers["authorization"].split(" ")[1]
+      : null);
+
+  if (token) {
+    try {
+      const decoded = jwt.decode(token);
+      if (decoded && decoded.exp) {
+        tokenBlacklist.add(token, decoded.exp * 1000);
+      }
+    } catch {
+      // Token may be malformed — ignore, we're clearing it anyway
+    }
+  }
+
+  const isProd = process.env.NODE_ENV === "production";
+  res.clearCookie("token", {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? "strict" : "lax",
+  });
+  res.clearCookie("refreshToken", {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? "strict" : "lax",
+  });
   return res.json({ message: "Logged out successfully" });
 };
 
@@ -299,4 +349,108 @@ const updateStatus = async (req, res) => {
   }
 };
 
-module.exports = { register, login, getMe, logout, refresh, updateStatus };
+/**
+ * POST /api/auth/forgot-password
+ * Body: { email }
+ * Sends a 6-digit OTP to the registered email.
+ */
+const forgotPassword = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  const { email } = req.body;
+
+  try {
+    const user = await UserModel.findByEmail(email.toLowerCase());
+    if (!user) {
+      return res
+        .status(404)
+        .json({ error: "No account found with that email address." });
+    }
+    if (!user.is_active) {
+      return res
+        .status(403)
+        .json({
+          error: "This account has been deactivated. Contact an administrator.",
+        });
+    }
+
+    const code = otpStore.create(email);
+    await sendResetCode(email.toLowerCase(), code);
+    await logAction(
+      req,
+      "password_reset_requested",
+      `Password reset requested for ${email}`,
+    );
+
+    return res.json({
+      message: "A 6-digit reset code has been sent to your email.",
+    });
+  } catch (err) {
+    console.error("[forgotPassword]", err);
+    return res
+      .status(500)
+      .json({ error: "Failed to send reset code. Please try again later." });
+  }
+};
+
+/**
+ * POST /api/auth/reset-password
+ * Body: { email, code, newPassword }
+ * Verifies the OTP and sets the new password.
+ */
+const resetPassword = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  const { email, code, newPassword } = req.body;
+
+  // Verify OTP
+  const result = otpStore.verify(email, code);
+  if (!result.valid) {
+    return res.status(400).json({ error: result.reason });
+  }
+
+  try {
+    const user = await UserModel.findByEmail(email.toLowerCase());
+    if (!user) {
+      return res.status(400).json({ error: "Account not found." });
+    }
+
+    const password_hash = await bcrypt.hash(newPassword, SALT_ROUNDS);
+    await UserModel.updatePassword(user.user_id, password_hash);
+
+    // Reset any lockout state
+    await UserModel.resetLoginAttempts(user.user_id);
+
+    await logAction(
+      req,
+      "password_reset_success",
+      `Password reset completed for ${email}`,
+    );
+
+    return res.json({
+      message: "Password has been reset successfully. You can now log in.",
+    });
+  } catch (err) {
+    console.error("[resetPassword]", err);
+    return res
+      .status(500)
+      .json({ error: "Failed to reset password. Please try again." });
+  }
+};
+
+module.exports = {
+  register,
+  login,
+  getMe,
+  logout,
+  refresh,
+  updateStatus,
+  forgotPassword,
+  resetPassword,
+};

@@ -1,6 +1,7 @@
 const { validationResult } = require("express-validator");
 const UserModel = require("../models/userModel");
 const db = require("../database/db");
+const { logAction } = require("../middleware/auditLogger");
 
 /* ================================================================== */
 /* GET /api/admin/users                                                */
@@ -175,6 +176,13 @@ const getLogs = async (req, res) => {
     const { search, type, limit: rawLimit } = req.query;
     const limit = Math.min(parseInt(rawLimit, 10) || 100, 500);
 
+    // Validate search length to prevent abuse
+    if (search && search.length > 200) {
+      return res
+        .status(400)
+        .json({ error: "Search term too long (max 200 chars)" });
+    }
+
     let sql = `SELECT l.log_id, l.action_type, l.ip_address, l.description, l.created_at,
                       u.full_name AS user_name
                FROM system_logs l
@@ -271,6 +279,28 @@ const getAllPredictions = async (req, res) => {
   try {
     const { search, risk, from, to, limit: rawLimit } = req.query;
     const limit = Math.min(parseInt(rawLimit, 10) || 500, 2000);
+
+    // Validate search length
+    if (search && search.length > 200) {
+      return res
+        .status(400)
+        .json({ error: "Search term too long (max 200 chars)" });
+    }
+    // Validate risk filter
+    if (risk && !["low", "moderate", "high"].includes(risk)) {
+      return res.status(400).json({ error: "Invalid risk level filter" });
+    }
+    // Validate date formats
+    if (from && !/^\d{4}-\d{2}-\d{2}$/.test(from)) {
+      return res
+        .status(400)
+        .json({ error: "Invalid 'from' date format (YYYY-MM-DD)" });
+    }
+    if (to && !/^\d{4}-\d{2}-\d{2}$/.test(to)) {
+      return res
+        .status(400)
+        .json({ error: "Invalid 'to' date format (YYYY-MM-DD)" });
+    }
 
     let sql = `SELECT p.*,
                       u.full_name AS user_name, u.email AS user_email,
@@ -410,24 +440,6 @@ const deleteAdminThread = async (req, res) => {
     return res.status(500).json({ error: "Failed to delete conversation" });
   }
 };
-
-/* ================================================================== */
-/* Helper — write to system_logs                                       */
-/* ================================================================== */
-async function logAction(req, actionType, description) {
-  const ip =
-    req.headers["x-forwarded-for"]?.split(",")[0]?.trim() ||
-    req.socket?.remoteAddress ||
-    "unknown";
-  try {
-    await db.query(
-      "INSERT INTO system_logs (user_id, action_type, ip_address, description) VALUES (?, ?, ?, ?)",
-      [req.user.user_id, actionType, ip, description],
-    );
-  } catch (err) {
-    console.error("[logAction]", err);
-  }
-}
 
 /* ================================================================== */
 /* Scheduled deletion worker — called by setInterval in server.js      */

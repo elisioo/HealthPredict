@@ -1,6 +1,7 @@
 const express = require("express");
 const { body } = require("express-validator");
 const { requireAuth, requireRole } = require("../middleware/authMiddleware");
+const { appointmentLimiter } = require("../middleware/rateLimitMiddleware");
 const {
   bookAppointment,
   getMyAppointments,
@@ -30,6 +31,7 @@ router.get("/all", requireRole("admin"), getAllAppointments);
 // POST /api/appointments  — patient books an appointment
 router.post(
   "/",
+  appointmentLimiter,
   [
     body("staff_id")
       .isInt({ min: 1 })
