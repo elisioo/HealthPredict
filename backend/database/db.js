@@ -1,8 +1,5 @@
 const mysql = require("mysql2/promise");
 
-/* ------------------------------------------------------------------ */
-/* Validate required environment variables at startup                   */
-/* ------------------------------------------------------------------ */
 const REQUIRED_DB_VARS = ["DB_HOST", "DB_USER", "DB_PASSWORD", "DB_NAME"];
 
 if (process.env.NODE_ENV === "production") {

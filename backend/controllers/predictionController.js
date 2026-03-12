@@ -7,9 +7,6 @@ const { logAction } = require("../middleware/auditLogger");
 
 const PYTHON_SCRIPT = path.join(__dirname, "../ml-training/predict.py");
 
-/**
- * Call the Python ML model and resolve with the parsed result object.
- */
 function runPythonModel(inputData) {
   return new Promise((resolve, reject) => {
     const proc = spawn("python", [PYTHON_SCRIPT], {
@@ -55,12 +52,8 @@ function runPythonModel(inputData) {
   });
 }
 
-/**
- * POST /api/predictions/predict
- * Run the ML model and save the result to the database.
- */
 const createPrediction = async (req, res) => {
-  // Validate inputs from express-validator
+
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ errors: errors.array() });
@@ -75,11 +68,10 @@ const createPrediction = async (req, res) => {
     bmi,
     HbA1c_level,
     blood_glucose_level,
-    // Optional: predict for another user (staff/admin only)
+
     target_user_id,
   } = req.body;
 
-  // Basic validation
   const missing = [
     "gender",
     "age",
@@ -98,7 +90,7 @@ const createPrediction = async (req, res) => {
   }
 
   try {
-    // Authorization: Only staff/admin can predict for other users
+
     let userId = req.user.user_id;
     if (target_user_id && Number(target_user_id) !== req.user.user_id) {
       if (req.user.role === "health_user") {
@@ -106,7 +98,7 @@ const createPrediction = async (req, res) => {
           error: "Patients cannot submit predictions for other users",
         });
       }
-      // Verify the target user exists
+
       const targetUser = await UserModel.findById(Number(target_user_id));
       if (!targetUser) {
         return res.status(404).json({ error: "Target user not found" });
@@ -141,7 +133,6 @@ const createPrediction = async (req, res) => {
       predicted_by: req.user.user_id,
     });
 
-    // Audit log for prediction creation
     await logAction(
       req,
       "prediction_created",
@@ -162,10 +153,6 @@ const createPrediction = async (req, res) => {
   }
 };
 
-/**
- * GET /api/predictions/history
- * Returns the logged-in health_user's prediction history.
- */
 const getUserPredictions = async (req, res) => {
   try {
     const predictions = await PredictionModel.getByUser(req.user.user_id);

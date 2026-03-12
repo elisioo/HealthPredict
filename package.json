@@ -5,7 +5,10 @@
     "dev": "concurrently --names \"BACKEND,FRONTEND\" --prefix-colors \"cyan,magenta\" \"npm run dev --prefix backend\" \"npm start --prefix frontend\""
   },
   "devDependencies": {
-    "concurrently": "^9.2.1"
+    "@eslint/js": "^10.0.1",
+    "concurrently": "^9.2.1",
+    "docx": "^9.6.1",
+    "eslint": "^10.0.3"
   },
   "dependencies": {
     "iconv-lite": "^0.7.2"

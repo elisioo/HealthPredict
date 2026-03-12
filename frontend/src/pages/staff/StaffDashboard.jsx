@@ -1,500 +1,395 @@
-import React from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../../components/DashboardLayout";
 import { NAV_BY_ROLE } from "../../components/navConfig";
+import { staffApi } from "../../api/authApi";
+import { useAuth } from "../../context/AuthContext";
 
-const STATS = [
-  {
-    label: "Total Patients",
-    value: "1,284",
-    change: "+12%",
-    up: true,
-    icon: "fa-users",
-    bg: "bg-blue-100",
-    text: "text-blue-600",
-    blob: "bg-blue-50",
-    border: "border-l-blue-500",
-  },
-  {
-    label: "High Risk Cases",
-    value: "142",
-    change: "+5%",
-    up: true,
-    icon: "fa-triangle-exclamation",
-    bg: "bg-red-100",
-    text: "text-red-600",
-    blob: "bg-red-50",
-    border: "border-l-red-500",
-  },
-  {
-    label: "Predictions Today",
-    value: "28",
-    change: "Today",
-    up: null,
-    icon: "fa-clipboard-check",
-    bg: "bg-yellow-100",
-    text: "text-yellow-600",
-    blob: "bg-yellow-50",
-    border: "border-l-yellow-500",
-  },
-  {
-    label: "Model Accuracy",
-    value: "94.8%",
-    change: null,
-    up: null,
-    icon: "fa-bullseye",
-    bg: "bg-emerald-100",
-    text: "text-emerald-600",
-    blob: "bg-emerald-50",
-    border: "border-l-emerald-500",
-  },
-];
-
-const FORM_FIELDS = [
-  {
-    label: "Glucose Level (mg/dL)",
-    icon: "fa-droplet",
-    placeholder: "e.g. 140",
-  },
-  {
-    label: "Blood Pressure (mm Hg)",
-    icon: "fa-heart-pulse",
-    placeholder: "e.g. 80",
-  },
-  {
-    label: "BMI Index",
-    icon: "fa-weight-scale",
-    placeholder: "e.g. 24.5",
-    step: "0.1",
-  },
-  { label: "Age", icon: "fa-calendar", placeholder: "e.g. 45" },
-];
-
-const RECENT_PATIENTS = [
-  {
-    name: "Wade Warren",
-    id: "#P-7732",
-    age: "58yo",
-    risk: "Moderate",
-    cls: "bg-yellow-100 text-yellow-600 border-yellow-200",
-  },
-  {
-    name: "Esther Howard",
-    id: "#P-1234",
-    age: "29yo",
-    risk: "Low Risk",
-    cls: "bg-green-100 text-green-600 border-green-200",
-  },
-];
-
-const TABLE_ROWS = [
-  {
-    initials: "RF",
-    name: "Robert Fox",
-    date: "Oct 24, 2023",
-    glucose: "142 mg/dL",
-    bp: "88 mm Hg",
-    bmi: "28.4",
-    score: 85,
-    risk: "High Risk",
-    riskCls: "bg-red-50 text-red-600 border-red-100",
-    barCls: "bg-red-500",
-    avatarCls: "bg-blue-100 text-blue-600",
-  },
-  {
-    initials: "JC",
-    name: "Jane Cooper",
-    date: "Oct 23, 2023",
-    glucose: "98 mg/dL",
-    bp: "72 mm Hg",
-    bmi: "22.1",
-    score: 12,
-    risk: "Healthy",
-    riskCls: "bg-green-50 text-green-600 border-green-100",
-    barCls: "bg-green-500",
-    avatarCls: null,
-  },
-  {
-    initials: "WW",
-    name: "Wade Warren",
-    date: "Oct 22, 2023",
-    glucose: "115 mg/dL",
-    bp: "80 mm Hg",
-    bmi: "26.8",
-    score: 45,
-    risk: "Moderate",
-    riskCls: "bg-yellow-50 text-yellow-600 border-yellow-100",
-    barCls: "bg-yellow-400",
-    avatarCls: "bg-purple-100 text-purple-600",
-  },
-];
-
-function LineChart() {
-  const pts = [120, 132, 101, 134, 90, 130, 110];
-  const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-  const w = 400,
-    h = 160,
-    pad = 20;
-  const max = Math.max(...pts),
-    min = Math.min(...pts);
-  const x = (i) => pad + (i / (pts.length - 1)) * (w - pad * 2);
-  const y = (v) => pad + (1 - (v - min) / (max - min)) * (h - pad * 2);
-  const path = pts
-    .map((v, i) => `${i === 0 ? "M" : "L"}${x(i)},${y(v)}`)
-    .join(" ");
-  return (
-    <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-full">
-      <path
-        d={`${path} L${x(pts.length - 1)},${h - pad} L${x(0)},${h - pad} Z`}
-        fill="rgba(37,99,235,0.1)"
-      />
-      <path
-        d={path}
-        fill="none"
-        stroke="#2563eb"
-        strokeWidth="2.5"
-        strokeLinejoin="round"
-        strokeLinecap="round"
-      />
-      {pts.map((v, i) => (
-        <circle
-          key={i}
-          cx={x(i)}
-          cy={y(v)}
-          r="4"
-          fill="#2563eb"
-          stroke="white"
-          strokeWidth="2"
-        />
-      ))}
-      {days.map((d, i) => (
-        <text
-          key={i}
-          x={x(i)}
-          y={h - 4}
-          textAnchor="middle"
-          fontSize="10"
-          fill="#94a3b8"
-        >
-          {d}
-        </text>
-      ))}
-    </svg>
-  );
+function riskCls(level) {
+  if (level === "high")
+    return { bg: "bg-red-100 text-red-800", text: "text-red-600" };
+  if (level === "moderate")
+    return { bg: "bg-yellow-100 text-yellow-800", text: "text-yellow-600" };
+  return { bg: "bg-green-100 text-green-800", text: "text-green-600" };
 }
 
 export default function StaffDashboard() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    total_patients: 0,
+    high_risk: 0,
+    predictions_today: 0,
+    appointments_today: 0,
+  });
+  const [recentPatients, setRecentPatients] = useState([]);
+  const [recentAssessments, setRecentAssessments] = useState([]);
+  const [upcomingAppointments, setUpcomingAppointments] = useState([]);
+
+  const fetchDashboard = useCallback(async () => {
+    try {
+      const { data } = await staffApi.getDashboard();
+      setStats(data.stats);
+      setRecentPatients(data.recentPatients || []);
+      setRecentAssessments(data.recentAssessments || []);
+      setUpcomingAppointments(data.upcomingAppointments || []);
+    } catch (err) {
+      console.error("Dashboard load error:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchDashboard();
+  }, [fetchDashboard]);
+
+  const STAT_CARDS = [
+    {
+      label: "Total Patients",
+      value: stats.total_patients,
+      icon: "fa-users",
+      bg: "bg-blue-100",
+      text: "text-blue-600",
+      border: "border-l-blue-500",
+      blob: "bg-blue-50",
+    },
+    {
+      label: "High Risk Cases",
+      value: stats.high_risk,
+      icon: "fa-triangle-exclamation",
+      bg: "bg-red-100",
+      text: "text-red-600",
+      border: "border-l-red-500",
+      blob: "bg-red-50",
+    },
+    {
+      label: "Predictions Today",
+      value: stats.predictions_today,
+      icon: "fa-clipboard-check",
+      bg: "bg-yellow-100",
+      text: "text-yellow-600",
+      border: "border-l-yellow-500",
+      blob: "bg-yellow-50",
+    },
+    {
+      label: "Appointments Today",
+      value: stats.appointments_today,
+      icon: "fa-calendar-check",
+      bg: "bg-emerald-100",
+      text: "text-emerald-600",
+      border: "border-l-emerald-500",
+      blob: "bg-emerald-50",
+    },
+  ];
+
   return (
     <DashboardLayout
       navItems={NAV_BY_ROLE.staff}
       title="Dashboard Overview"
-      subtitle="Welcome back, Dr. Sarah"
+      subtitle={`Welcome back, ${user?.fullName || "Staff"}`}
     >
-      {/* Stats */}
-      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {STATS.map(
-          ({ label, value, change, up, icon, bg, text, blob, border }) => (
-            <div
-              key={label}
-              className={`bg-white rounded-2xl p-6 h-40 relative overflow-hidden group hover:shadow-lg transition-all border-l-4 ${border} shadow-sm`}
-            >
-              <div
-                className={`absolute right-0 top-0 w-24 h-24 ${blob} rounded-full -mr-8 -mt-8 group-hover:scale-110 transition-transform`}
-              />
-              <div className="relative z-10">
-                <div className="flex justify-between items-start mb-4">
-                  <div className={`p-2 ${bg} ${text} rounded-lg`}>
-                    <i className={`fa-solid ${icon} text-lg`}></i>
+      {loading ? (
+        <div className="flex items-center justify-center py-20">
+          <i className="fa-solid fa-spinner fa-spin text-2xl text-primary"></i>
+        </div>
+      ) : (
+        <>
+          {/* Stats */}
+          <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {STAT_CARDS.map(
+              ({ label, value, icon, bg, text, border, blob }) => (
+                <div
+                  key={label}
+                  className={`bg-white rounded-2xl p-6 h-40 relative overflow-hidden group hover:shadow-lg transition-all border-l-4 ${border} shadow-sm`}
+                >
+                  <div
+                    className={`absolute right-0 top-0 w-24 h-24 ${blob} rounded-full -mr-8 -mt-8 group-hover:scale-110 transition-transform`}
+                  />
+                  <div className="relative z-10">
+                    <div className="flex justify-between items-start mb-4">
+                      <div className={`p-2 ${bg} ${text} rounded-lg`}>
+                        <i className={`fa-solid ${icon} text-lg`}></i>
+                      </div>
+                    </div>
+                    <h3 className="text-slate-500 text-sm font-medium">
+                      {label}
+                    </h3>
+                    <p className="text-3xl font-bold text-slate-800 mt-1 text-right">
+                      {typeof value === "number"
+                        ? value.toLocaleString()
+                        : value}
+                    </p>
                   </div>
-                  {change && (
-                    <span
-                      className={`text-xs font-medium px-2 py-1 rounded-full flex items-center gap-1 ${
-                        up === true
-                          ? "text-green-600 bg-green-50"
-                          : up === false
-                            ? "text-red-600 bg-red-50"
-                            : "text-slate-500 bg-slate-100"
-                      }`}
-                    >
-                      {up !== null && (
-                        <i
-                          className={`fa-solid fa-arrow-${up ? "up" : "down"} text-[10px]`}
-                        ></i>
-                      )}
-                      {change}
+                </div>
+              ),
+            )}
+          </section>
+
+          {/* Main Grid */}
+          <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 space-y-6">
+              {/* Quick Actions */}
+              <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+                <h2 className="text-xl font-bold text-slate-800 mb-4">
+                  Quick Actions
+                </h2>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <button
+                    onClick={() => navigate("/prediction")}
+                    className="flex flex-col items-center gap-2 p-4 rounded-xl border border-slate-200 hover:border-blue-300 hover:bg-blue-50 transition-all"
+                  >
+                    <i className="fa-solid fa-wand-magic-sparkles text-blue-600 text-lg"></i>
+                    <span className="text-xs font-medium text-slate-700">
+                      New Prediction
                     </span>
+                  </button>
+                  <button
+                    onClick={() => navigate("/staff/patients")}
+                    className="flex flex-col items-center gap-2 p-4 rounded-xl border border-slate-200 hover:border-blue-300 hover:bg-blue-50 transition-all"
+                  >
+                    <i className="fa-solid fa-folder-open text-emerald-600 text-lg"></i>
+                    <span className="text-xs font-medium text-slate-700">
+                      Patient Records
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => navigate("/staff/appointments")}
+                    className="flex flex-col items-center gap-2 p-4 rounded-xl border border-slate-200 hover:border-blue-300 hover:bg-blue-50 transition-all"
+                  >
+                    <i className="fa-solid fa-calendar-check text-yellow-600 text-lg"></i>
+                    <span className="text-xs font-medium text-slate-700">
+                      Appointments
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => navigate("/staff/team")}
+                    className="flex flex-col items-center gap-2 p-4 rounded-xl border border-slate-200 hover:border-blue-300 hover:bg-blue-50 transition-all"
+                  >
+                    <i className="fa-solid fa-user-doctor text-purple-600 text-lg"></i>
+                    <span className="text-xs font-medium text-slate-700">
+                      Medical Team
+                    </span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Recent Assessments Table */}
+              <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <h2 className="text-xl font-bold text-slate-800">
+                      Recent Assessments
+                    </h2>
+                    <p className="text-sm text-slate-500">
+                      Latest prediction results
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => navigate("/staff/patients")}
+                    className="text-sm text-blue-600 font-medium hover:underline"
+                  >
+                    View all
+                  </button>
+                </div>
+                <div className="overflow-x-auto -mx-6 px-6">
+                  <table className="w-full min-w-[700px]">
+                    <thead>
+                      <tr className="text-left text-xs text-slate-500 uppercase border-b border-slate-100">
+                        {[
+                          "Patient",
+                          "Date",
+                          "Glucose",
+                          "BMI",
+                          "HbA1c",
+                          "Risk Level",
+                          "Probability",
+                        ].map((h) => (
+                          <th key={h} className="py-3 font-semibold">
+                            {h}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="text-sm text-slate-700">
+                      {recentAssessments.length === 0 ? (
+                        <tr>
+                          <td
+                            colSpan={7}
+                            className="py-8 text-center text-slate-400"
+                          >
+                            No assessments yet
+                          </td>
+                        </tr>
+                      ) : (
+                        recentAssessments.map((a) => {
+                          const rc = riskCls(a.risk_level);
+                          return (
+                            <tr
+                              key={a.prediction_id}
+                              className="border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors"
+                            >
+                              <td className="py-4">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center font-semibold text-blue-600 text-sm">
+                                    {a.full_name?.charAt(0) || "?"}
+                                  </div>
+                                  <div>
+                                    <p className="font-semibold text-slate-900">
+                                      {a.full_name}
+                                    </p>
+                                    <p className="text-xs text-slate-400">
+                                      ID: {a.user_id}
+                                    </p>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="py-4 text-slate-600">
+                                {new Date(a.created_at).toLocaleDateString()}
+                              </td>
+                              <td className="py-4">
+                                {a.blood_glucose_level} mg/dL
+                              </td>
+                              <td className="py-4">{a.bmi}</td>
+                              <td className="py-4">{a.HbA1c_level}%</td>
+                              <td className="py-4">
+                                <span
+                                  className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${rc.bg}`}
+                                >
+                                  {a.risk_level}
+                                </span>
+                              </td>
+                              <td className={`py-4 font-semibold ${rc.text}`}>
+                                {a.probability}%
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            {/* Sidebar */}
+            <div className="space-y-6">
+              {/* Recent Patients */}
+              <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h2 className="text-lg font-bold text-slate-800">
+                      Recent Patients
+                    </h2>
+                    <p className="text-sm text-slate-500">Latest predictions</p>
+                  </div>
+                  <button
+                    onClick={() => navigate("/staff/patients")}
+                    className="text-sm text-blue-600 font-medium hover:underline"
+                  >
+                    View all
+                  </button>
+                </div>
+                <div className="space-y-3">
+                  {recentPatients.length === 0 ? (
+                    <p className="text-sm text-slate-400 text-center py-4">
+                      No patients yet
+                    </p>
+                  ) : (
+                    recentPatients.map((p) => {
+                      const rc = riskCls(p.risk_level);
+                      return (
+                        <div
+                          key={p.user_id}
+                          className="p-3 rounded-xl border border-slate-100 hover:border-blue-200 transition-colors flex items-center justify-between"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-semibold text-sm">
+                              {p.full_name?.charAt(0) || "?"}
+                            </div>
+                            <div>
+                              <p className="text-sm font-semibold text-slate-800">
+                                {p.full_name}
+                              </p>
+                              <p className="text-xs text-slate-400">
+                                {new Date(p.created_at).toLocaleDateString()}
+                              </p>
+                            </div>
+                          </div>
+                          <span
+                            className={`text-xs font-semibold px-3 py-1 rounded-full border ${rc.bg}`}
+                          >
+                            {p.risk_level || "N/A"}
+                          </span>
+                        </div>
+                      );
+                    })
                   )}
                 </div>
-                <h3 className="text-slate-500 text-sm font-medium">{label}</h3>
-                <p className="text-3xl font-bold text-slate-800 mt-1 text-right">
-                  {value}
-                </p>
               </div>
-            </div>
-          ),
-        )}
-      </section>
 
-      {/* Main Grid */}
-      <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
-          {/* Prediction Form */}
-          <div className="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-slate-100">
-            <div className="mb-6">
-              <h2 className="text-xl font-bold text-slate-800">
-                New Risk Assessment
-              </h2>
-              <p className="text-sm text-slate-500 mt-1">
-                Enter patient vitals for instant AI prediction
-              </p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
-              {FORM_FIELDS.map(({ label, icon, placeholder, step }) => (
-                <div key={label} className="space-y-2">
-                  <label className="text-sm font-medium text-slate-700">
-                    {label}
-                  </label>
-                  <div className="relative">
-                    <i
-                      className={`fa-solid ${icon} absolute left-3 top-1/2 -translate-y-1/2 text-slate-400`}
-                    ></i>
-                    <input
-                      type="number"
-                      step={step}
-                      placeholder={placeholder}
-                      className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all text-sm"
-                    />
+              {/* Upcoming Appointments */}
+              <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h2 className="text-lg font-bold text-slate-800">
+                      Upcoming Appointments
+                    </h2>
+                    <p className="text-sm text-slate-500">Today & beyond</p>
                   </div>
-                </div>
-              ))}
-            </div>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <button
-                onClick={() => navigate("/result")}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3.5 px-6 rounded-xl shadow-lg shadow-blue-500/30 transition-all flex items-center justify-center gap-2"
-              >
-                <i className="fa-solid fa-wand-magic-sparkles"></i>
-                Run Prediction
-              </button>
-              <button className="px-6 py-3.5 bg-white border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 transition-all flex items-center justify-center gap-2">
-                <i className="fa-solid fa-floppy-disk"></i>
-                Save Draft
-              </button>
-            </div>
-          </div>
-
-          {/* Line Chart */}
-          <div className="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-slate-100">
-            <div className="flex items-start justify-between">
-              <div>
-                <h2 className="text-xl font-bold text-slate-800">
-                  Glucose Trends
-                </h2>
-                <p className="text-sm text-slate-500 mt-1">
-                  Past 7 day patient readings
-                </p>
-              </div>
-              <button className="text-sm text-blue-600 font-medium">
-                Export CSV
-              </button>
-            </div>
-            <div className="mt-6">
-              <LineChart />
-            </div>
-          </div>
-        </div>
-
-        {/* Sidebar Cards */}
-        <div className="space-y-6">
-          {/* Recent patients */}
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h2 className="text-lg font-bold text-slate-800">
-                  Recent patients
-                </h2>
-                <p className="text-sm text-slate-500">High priority</p>
-              </div>
-              <button className="text-sm text-blue-600 font-medium">
-                View all
-              </button>
-            </div>
-            <div className="space-y-4">
-              {RECENT_PATIENTS.map(({ name, id, age, risk, cls }) => (
-                <div
-                  key={id}
-                  className="p-4 rounded-xl border border-slate-100 hover:border-blue-200 transition-colors flex items-center justify-between"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-semibold">
-                      {name
-                        .split(" ")
-                        .map((n) => n[0])
-                        .join("")}
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-slate-800">
-                        {name}
-                      </p>
-                      <p className="text-xs text-slate-400">
-                        {id} · {age}
-                      </p>
-                    </div>
-                  </div>
-                  <span
-                    className={`text-xs font-semibold px-3 py-1 rounded-full border ${cls}`}
+                  <button
+                    onClick={() => navigate("/staff/appointments")}
+                    className="text-sm text-blue-600 font-medium hover:underline"
                   >
-                    {risk}
-                  </span>
+                    View all
+                  </button>
                 </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Tasks */}
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-3">
-            <div className="flex items-start justify-between">
-              <div>
-                <h2 className="text-lg font-bold text-slate-800">Tasks</h2>
-                <p className="text-sm text-slate-500">Follow-up reminders</p>
-              </div>
-              <button className="text-sm text-blue-600 font-medium">
-                Add task
-              </button>
-            </div>
-            {[
-              "Review lab results",
-              "Schedule dietitian consult",
-              "Update care plan",
-            ].map((task) => (
-              <div
-                key={task}
-                className="flex items-center gap-3 p-3 rounded-xl border border-slate-100 hover:border-blue-200 transition-colors"
-              >
-                <input type="checkbox" className="accent-blue-600 w-4 h-4" />
-                <span className="text-sm text-slate-700">{task}</span>
-              </div>
-            ))}
-            <div className="p-4 bg-blue-50 border border-blue-100 rounded-xl">
-              <p className="text-sm text-blue-700 font-medium">
-                AI suggestions ready
-              </p>
-              <p className="text-xs text-blue-600">
-                3 new recommendations for high-risk patients
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Table */}
-      <section className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-        <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
-          <div>
-            <h2 className="text-xl font-bold text-slate-800">
-              Recent assessments
-            </h2>
-            <p className="text-sm text-slate-500">Updated 2 hours ago</p>
-          </div>
-          <div className="flex gap-2">
-            {["All", "Healthy", "Moderate", "High risk"].map((filter) => (
-              <button
-                key={filter}
-                className={`px-3 py-1.5 text-sm rounded-lg border transition-colors ${
-                  filter === "All"
-                    ? "bg-blue-50 text-blue-600 border-blue-200"
-                    : "text-slate-500 border-slate-200 hover:border-blue-200 hover:text-blue-600"
-                }`}
-              >
-                {filter}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="overflow-x-auto -mx-6 px-6">
-          <table className="w-full min-w-[880px]">
-            <thead>
-              <tr className="text-left text-xs text-slate-500 uppercase border-b border-slate-100">
-                {[
-                  "Patient",
-                  "Date",
-                  "Glucose",
-                  "Blood Pressure",
-                  "BMI",
-                  "Risk Score",
-                  "Status",
-                ].map((head) => (
-                  <th key={head} className="py-3 font-semibold">
-                    {head}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="text-sm text-slate-700">
-              {TABLE_ROWS.map(
-                ({
-                  initials,
-                  name,
-                  date,
-                  glucose,
-                  bp,
-                  bmi,
-                  score,
-                  risk,
-                  riskCls,
-                  barCls,
-                  avatarCls,
-                }) => (
-                  <tr
-                    key={name}
-                    className="border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors"
-                  >
-                    <td className="py-4">
-                      <div className="flex items-center gap-3">
-                        <div
-                          className={`w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center font-semibold text-slate-700 ${avatarCls}`}
-                        >
-                          {initials}
-                        </div>
-                        <div>
-                          <p className="font-semibold text-slate-900">{name}</p>
-                          <p className="text-xs text-slate-400">ID: P-1024</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="py-4 text-slate-600">{date}</td>
-                    <td className="py-4">{glucose}</td>
-                    <td className="py-4">{bp}</td>
-                    <td className="py-4">{bmi}</td>
-                    <td className="py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-20 h-1.5 rounded-full bg-slate-100 overflow-hidden">
-                          <div
-                            className={`h-full ${barCls}`}
-                            style={{ width: `${score}%` }}
-                          />
-                        </div>
-                        <span className="text-sm font-semibold text-slate-900">
-                          {score}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="py-4">
-                      <span
-                        className={`text-xs font-semibold px-3 py-1 rounded-full border ${riskCls}`}
+                <div className="space-y-3">
+                  {upcomingAppointments.length === 0 ? (
+                    <p className="text-sm text-slate-400 text-center py-4">
+                      No upcoming appointments
+                    </p>
+                  ) : (
+                    upcomingAppointments.map((a) => (
+                      <div
+                        key={a.appointment_id}
+                        className="p-3 rounded-xl border border-slate-100 hover:border-blue-200 transition-colors"
                       >
-                        {risk}
-                      </span>
-                    </td>
-                  </tr>
-                ),
-              )}
-            </tbody>
-          </table>
-        </div>
-      </section>
+                        <div className="flex items-center justify-between">
+                          <p className="text-sm font-semibold text-slate-800">
+                            {a.patient_name}
+                          </p>
+                          <span
+                            className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                              a.status === "approved"
+                                ? "bg-green-100 text-green-700"
+                                : a.status === "pending"
+                                  ? "bg-yellow-100 text-yellow-700"
+                                  : "bg-gray-100 text-gray-600"
+                            }`}
+                          >
+                            {a.status}
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-500 mt-1">
+                          <i className="fa-solid fa-calendar-day mr-1"></i>
+                          {new Date(a.appointment_date).toLocaleString()}
+                        </p>
+                        {a.notes && (
+                          <p className="text-xs text-slate-400 mt-1 truncate">
+                            {a.notes}
+                          </p>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+          </section>
+        </>
+      )}
     </DashboardLayout>
   );
 }

@@ -1,5 +1,5 @@
 ﻿import React from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { ToastProvider } from "./context/ToastContext";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -39,6 +39,7 @@ import ResultPage from "./pages/shared/ResultPage";
 import MessagesPage from "./pages/shared/MessagesPage";
 import ProfilePage from "./pages/shared/ProfilePage";
 import SettingsPage from "./pages/shared/SettingsPage";
+import NotFoundPage from "./pages/shared/NotFoundPage";
 
 /**
  * HealthPredict - App Router
@@ -246,12 +247,6 @@ function App() {
               }
             />
 
-            {/* 404 fallback */}
-            <Route
-              path="*"
-              element={<Navigate to={ROUTES.landing.path} replace />}
-            />
-
             {/* Appointments — Health User */}
             <Route
               path={ROUTES.appointments.path}
@@ -271,6 +266,9 @@ function App() {
                 </ProtectedRoute>
               }
             />
+
+            {/* 404 — catch-all (must be last) */}
+            <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </AuthProvider>
       </ToastProvider>

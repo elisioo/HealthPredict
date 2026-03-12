@@ -3,10 +3,6 @@ import DashboardLayout from "../../components/DashboardLayout";
 import { NAV_BY_ROLE } from "../../components/navConfig";
 import { adminApi } from "../../api/authApi";
 
-/* ------------------------------------------------------------------ */
-/* Helpers                                                              */
-/* ------------------------------------------------------------------ */
-
 const ACTION_ICON = {
   activate_user: {
     icon: "fa-user-check",
@@ -66,9 +62,6 @@ function timeAgo(iso) {
   return `${Math.floor(diff / 86400)}d ago`;
 }
 
-/* ------------------------------------------------------------------ */
-/* Main Page                                                            */
-/* ------------------------------------------------------------------ */
 export default function ActivityMonitorPage() {
   const [activity, setActivity] = useState([]);
   const [stats, setStats] = useState(null);

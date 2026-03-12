@@ -2,6 +2,8 @@ import React, { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import ReCAPTCHA from "react-google-recaptcha";
 import { useAuth } from "../../context/AuthContext";
+import stripTags from "../../utils/stripTags";
+import { sanitizeName } from "../../utils/stripTags";
 
 const RECAPTCHA_SITE_KEY = process.env.REACT_APP_RECAPTCHA_SITE_KEY || "";
 
@@ -59,7 +61,17 @@ export default function CreateAccountPage() {
   const [loading, setLoading] = useState(false);
   const [captchaToken, setCaptchaToken] = useState(null);
 
-  const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+  const NAME_FIELDS = ["firstName", "lastName", "mi"];
+  const set = (k, v) =>
+    setForm((f) => ({
+      ...f,
+      [k]:
+        typeof v === "string"
+          ? NAME_FIELDS.includes(k)
+            ? sanitizeName(v)
+            : stripTags(v)
+          : v,
+    }));
 
   // Live password checks
   const pwChecks = {
@@ -258,7 +270,7 @@ export default function CreateAccountPage() {
             <div className="mb-8">
               <h1 className="text-2xl font-bold text-slate-900">
                 Create Account
-              </h1> 
+              </h1>
               <p className="text-sm text-slate-500 mt-1">
                 Start your journey to better health monitoring.
               </p>

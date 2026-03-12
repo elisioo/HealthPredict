@@ -3,6 +3,7 @@ import DashboardLayout from "../../components/DashboardLayout";
 import { NAV_BY_ROLE } from "../../components/navConfig";
 import { useAuth } from "../../context/AuthContext";
 import { messageApi, predictionApi } from "../../api/authApi";
+import stripTags from "../../utils/stripTags";
 
 /* ------------------------------------------------------------------ */
 /* Report message encoding / decoding                                   */
@@ -541,7 +542,7 @@ export default function MessagesPage() {
                     ref={textareaRef}
                     rows={1}
                     value={text}
-                    onChange={(e) => setText(e.target.value)}
+                    onChange={(e) => setText(stripTags(e.target.value))}
                     onKeyDown={handleKeyDown}
                     placeholder={
                       attachedReport

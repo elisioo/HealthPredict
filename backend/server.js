@@ -14,18 +14,13 @@ const predictionRoutes = require("./routes/predictionRoutes");
 const profileRoutes = require("./routes/profileRoutes");
 const appointmentRoutes = require("./routes/appointmentRoutes");
 const adminRoutes = require("./routes/adminRoutes");
+const staffRoutes = require("./routes/staffRoutes");
 const { processDeletions } = require("./controllers/adminController");
 
 const app = express();
 
-/* ------------------------------------------------------------------ */
-/* Security Middleware                                                   */
-/* ------------------------------------------------------------------ */
-
-// HTTP security headers (helmet + additional hardening)
 app.use(helmet());
 
-// Permissions-Policy header — disable unused browser APIs
 app.use((_req, res, next) => {
   res.setHeader(
     "Permissions-Policy",
@@ -34,41 +29,29 @@ app.use((_req, res, next) => {
   next();
 });
 
-// CORS — allow the React dev server with preflight caching
 app.use(
   cors({
     origin: process.env.CLIENT_URL || "http://localhost:3001",
-    credentials: true, // allow cookies
-    maxAge: 3600, // cache preflight responses for 1 hour
+    credentials: true,
+    maxAge: 3600,
   }),
 );
 
-// Parse JSON bodies (limit to 10kb to prevent large payloads)
 app.use(express.json({ limit: "10kb" }));
 app.use(express.urlencoded({ extended: false }));
 
-// Cookie parser (required for httpOnly cookie auth)
 app.use(cookieParser());
 
-// Strip HTML tags from all incoming string values (XSS prevention)
 app.use(sanitizeInput);
 
-// General rate limit on all /api routes
 app.use("/api", generalLimiter);
 
-/* ------------------------------------------------------------------ */
-/* Request logger (dev only)                                            */
-/* ------------------------------------------------------------------ */
 if (process.env.NODE_ENV !== "production") {
   app.use((req, _res, next) => {
     console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
     next();
   });
 }
-
-/* ------------------------------------------------------------------ */
-/* API Routes                                                            */
-/* ------------------------------------------------------------------ */
 
 app.get("/", (_req, res) =>
   res.json({ message: "HealthPredict API is running" }),
@@ -80,10 +63,7 @@ app.use("/api/predictions", predictionRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/appointments", appointmentRoutes);
 app.use("/api/admin", adminRoutes);
-
-/* ------------------------------------------------------------------ */
-/* 404 + Global error handlers                                          */
-/* ------------------------------------------------------------------ */
+app.use("/api/staff", staffRoutes);
 
 app.use((_req, res) => {
   res.status(404).json({ error: "Route not found" });
@@ -99,14 +79,9 @@ app.use((err, _req, res, _next) => {
   });
 });
 
-/* ------------------------------------------------------------------ */
-/* Start server                                                          */
-/* ------------------------------------------------------------------ */
-
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`🚀 HealthPredict API running on http://localhost:${PORT}`);
+  console.log(`HealthPredict API running on http://localhost:${PORT}`);
 
-  // Run scheduled-deletion worker every 30 seconds
   setInterval(processDeletions, 30_000);
 });

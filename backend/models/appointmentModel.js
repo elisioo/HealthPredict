@@ -1,7 +1,7 @@
 const db = require("../database/db");
 
 const AppointmentModel = {
-  /** Patient books a new appointment */
+
   async create({ user_id, staff_id, appointment_date, notes }) {
     const [result] = await db.query(
       `INSERT INTO appointments (user_id, staff_id, appointment_date, notes)
@@ -11,7 +11,6 @@ const AppointmentModel = {
     return result.insertId;
   },
 
-  /** Get all appointments for a specific patient */
   async getByUser(userId) {
     const [rows] = await db.query(
       `SELECT
@@ -27,7 +26,6 @@ const AppointmentModel = {
     return rows;
   },
 
-  /** Get all appointments assigned to a specific staff member */
   async getByStaff(staffId) {
     const [rows] = await db.query(
       `SELECT
@@ -43,7 +41,6 @@ const AppointmentModel = {
     return rows;
   },
 
-  /** Admin — get all appointments across the system */
   async getAll() {
     const [rows] = await db.query(
       `SELECT
@@ -59,7 +56,6 @@ const AppointmentModel = {
     return rows;
   },
 
-  /** Get list of active staff/admin available for booking */
   async getStaffList() {
     const [rows] = await db.query(
       `SELECT user_id, full_name, role, availability_status
@@ -70,7 +66,6 @@ const AppointmentModel = {
     return rows;
   },
 
-  /** Find a single appointment by id */
   async findById(appointmentId) {
     const [rows] = await db.query(
       `SELECT * FROM appointments WHERE appointment_id = ?`,
@@ -79,7 +74,6 @@ const AppointmentModel = {
     return rows[0] || null;
   },
 
-  /** Update appointment status */
   async updateStatus(appointmentId, status) {
     const [result] = await db.query(
       `UPDATE appointments SET status = ? WHERE appointment_id = ?`,

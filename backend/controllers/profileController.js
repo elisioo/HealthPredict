@@ -1,10 +1,7 @@
 const { validationResult } = require("express-validator");
 const HealthProfileModel = require("../models/healthProfileModel");
+const UserModel = require("../models/userModel");
 
-/**
- * GET /api/profile/health
- * Returns the logged-in health_user's health profile (or null if not yet filled).
- */
 const getHealthProfile = async (req, res) => {
   try {
     const profile = await HealthProfileModel.findByUser(req.user.user_id);
@@ -15,18 +12,21 @@ const getHealthProfile = async (req, res) => {
   }
 };
 
-/**
- * PUT /api/profile/health
- * Creates or updates the logged-in health_user's health profile.
- */
 const updateHealthProfile = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ errors: errors.array() });
   }
 
-  const { date_of_birth, gender, height_cm, weight_kg, bmi, smoking_status } =
-    req.body;
+  const {
+    date_of_birth,
+    gender,
+    height_cm,
+    weight_kg,
+    bmi,
+    smoking_status,
+    contact_phone,
+  } = req.body;
 
   try {
     const profile = await HealthProfileModel.upsert(req.user.user_id, {
@@ -36,6 +36,7 @@ const updateHealthProfile = async (req, res) => {
       weight_kg: weight_kg ? parseFloat(weight_kg) : null,
       bmi: bmi ? parseFloat(bmi) : null,
       smoking_status: smoking_status || null,
+      contact_phone: contact_phone || null,
     });
     return res.json({ profile });
   } catch (err) {
@@ -44,4 +45,22 @@ const updateHealthProfile = async (req, res) => {
   }
 };
 
-module.exports = { getHealthProfile, updateHealthProfile };
+const updatePhone = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+  const { phone } = req.body;
+  try {
+    await UserModel.updatePhone(req.user.user_id, phone || null);
+    return res.json({
+      message: "Phone number updated successfully",
+      phone: phone || null,
+    });
+  } catch (err) {
+    console.error("[updatePhone]", err);
+    return res.status(500).json({ error: "Failed to update phone number" });
+  }
+};
+
+module.exports = { getHealthProfile, updateHealthProfile, updatePhone };

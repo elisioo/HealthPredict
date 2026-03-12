@@ -9,9 +9,6 @@ const {
 
 const router = express.Router();
 
-/* ------------------------------------------------------------------ */
-/* Prediction input validation rules                                    */
-/* ------------------------------------------------------------------ */
 const predictionValidation = [
   body("gender")
     .isIn(["Male", "Female", "Other"])
@@ -43,7 +40,6 @@ const predictionValidation = [
     .withMessage("Invalid target user ID"),
 ];
 
-// POST /api/predictions/predict — run ML model and save result
 router.post(
   "/predict",
   requireAuth,
@@ -52,7 +48,6 @@ router.post(
   createPrediction,
 );
 
-// GET /api/predictions/history — authenticated users only
 router.get("/history", requireAuth, getUserPredictions);
 
 module.exports = router;

@@ -3,6 +3,7 @@ import DashboardLayout from "../../components/DashboardLayout";
 import { NAV_BY_ROLE } from "../../components/navConfig";
 import { useAuth } from "../../context/AuthContext";
 import { appointmentApi } from "../../api/authApi";
+import stripTags from "../../utils/stripTags";
 
 /* ------------------------------------------------------------------ */
 /* Helpers                                                              */
@@ -201,7 +202,7 @@ export default function StaffAppointmentsPage() {
             <input
               type="text"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => setSearch(stripTags(e.target.value))}
               placeholder="Search by patient name or notes..."
               className="w-full pl-9 pr-4 py-2 text-sm border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
             />

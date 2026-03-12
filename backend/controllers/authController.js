@@ -83,189 +83,178 @@ const verifyCaptcha = async (captchaToken) => {
   }
 };
 
-/* ------------------------------------------------------------------ */
-/* Controllers                                                           */
-/* ------------------------------------------------------------------ */
-
-/**
- * POST /api/auth/register
- * Body: { firstName, lastName, mi?, email, password, role, phone?, captchaToken }
- */
 const register = async (req, res) => {
-  // 1. Validate inputs
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
+  try {
+
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const {
+      firstName,
+      lastName,
+      mi,
+      email,
+      password,
+      role,
+      phone,
+      captchaToken,
+    } = req.body;
+
+    const fullName = [
+      firstName.trim(),
+      mi ? mi.trim().toUpperCase() + "." : null,
+      lastName.trim(),
+    ]
+      .filter(Boolean)
+      .join(" ");
+
+    const captchaOk = await verifyCaptcha(captchaToken);
+    if (!captchaOk) {
+      return res.status(400).json({ error: "CAPTCHA verification failed" });
+    }
+
+    const dbRole = ROLE_MAP[role];
+    if (!dbRole) {
+      return res.status(400).json({ error: "Invalid account role" });
+    }
+
+    const exists = await UserModel.emailExists(email.toLowerCase());
+    if (exists) {
+      return res.status(409).json({ error: "Email already registered" });
+    }
+
+    const password_hash = await bcrypt.hash(password, SALT_ROUNDS);
+
+    const userId = await UserModel.create({
+      full_name: fullName,
+      first_name: firstName.trim(),
+      last_name: lastName.trim(),
+      m_i: mi ? mi.trim().toUpperCase() : null,
+      email: email.toLowerCase().trim(),
+      password_hash,
+      role: dbRole,
+      phone: phone || null,
+    });
+
+    const newUser = await UserModel.findById(userId);
+
+    return sendTokens(res, newUser, 201);
+  } catch (err) {
+    console.error("[register]", err);
+    return res
+      .status(500)
+      .json({ error: "Something went wrong. Please try again later." });
   }
-
-  const {
-    firstName,
-    lastName,
-    mi,
-    email,
-    password,
-    role,
-    phone,
-    captchaToken,
-  } = req.body;
-
-  const fullName = [
-    firstName.trim(),
-    mi ? mi.trim().toUpperCase() + "." : null,
-    lastName.trim(),
-  ]
-    .filter(Boolean)
-    .join(" ");
-
-  const captchaOk = await verifyCaptcha(captchaToken);
-  if (!captchaOk) {
-    return res.status(400).json({ error: "CAPTCHA verification failed" });
-  }
-
-  // Map role
-  const dbRole = ROLE_MAP[role];
-  if (!dbRole) {
-    return res.status(400).json({ error: "Invalid account role" });
-  }
-
-  // 4. Check duplicate email
-  const exists = await UserModel.emailExists(email.toLowerCase());
-  if (exists) {
-    return res.status(409).json({ error: "Email already registered" });
-  }
-
-  // 5. Hash password
-  const password_hash = await bcrypt.hash(password, SALT_ROUNDS);
-
-  // 6. Persist
-  const userId = await UserModel.create({
-    full_name: fullName,
-    first_name: firstName.trim(),
-    last_name: lastName.trim(),
-    m_i: mi ? mi.trim().toUpperCase() : null,
-    email: email.toLowerCase().trim(),
-    password_hash,
-    role: dbRole,
-    phone: phone || null,
-  });
-
-  const newUser = await UserModel.findById(userId);
-
-  // 7. Issue tokens
-  return sendTokens(res, newUser, 201);
 };
 
-/**
- * POST /api/auth/login
- * Body: { email, password, captchaToken }
- */
 const login = async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
-  }
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
 
-  const { email, password, captchaToken } = req.body;
+    const { email, password, captchaToken } = req.body;
 
-  // 1. CAPTCHA
-  const captchaOk = await verifyCaptcha(captchaToken);
-  if (!captchaOk) {
-    return res.status(400).json({ error: "CAPTCHA verification failed" });
-  }
+    const captchaOk = await verifyCaptcha(captchaToken);
+    if (!captchaOk) {
+      return res.status(400).json({ error: "CAPTCHA verification failed" });
+    }
 
-  // 2. Find user
-  const user = await UserModel.findByEmail(email.toLowerCase());
-  if (!user) {
-    // Generic message to avoid user enumeration
-    return res.status(401).json({ error: "Invalid credentials" });
-  }
+    const user = await UserModel.findByEmail(email.toLowerCase());
+    if (!user) {
 
-  // 3. Check active
-  if (!user.is_active) {
-    return res
-      .status(403)
-      .json({ error: "Account is deactivated. Contact admin." });
-  }
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
 
-  // 4. Check lockout
-  if (user.locked_until && new Date(user.locked_until) > new Date()) {
-    const secsLeft = Math.ceil(
-      (new Date(user.locked_until) - Date.now()) / 1000,
-    );
-    return res.status(423).json({
-      error:
-        "Account is temporarily locked due to too many failed login attempts.",
-      locked_until: user.locked_until,
-      seconds_left: secsLeft,
-    });
-  }
+    if (!user.is_active) {
+      return res
+        .status(403)
+        .json({ error: "Account is deactivated. Contact admin." });
+    }
 
-  // 5. Verify password
-  const match = await bcrypt.compare(password, user.password_hash);
-  if (!match) {
-    const attempt = await UserModel.recordFailedAttempt(user.user_id);
-    const remaining = UserModel.MAX_ATTEMPTS - attempt.login_attempts;
-
-    // Log the failed attempt
-    await logAction(
-      req,
-      "login_failure",
-      `Failed login attempt for ${user.email} (attempt ${attempt.login_attempts}/${UserModel.MAX_ATTEMPTS})`,
-    );
-
-    if (attempt.login_attempts >= UserModel.MAX_ATTEMPTS) {
+    if (user.locked_until && new Date(user.locked_until) > new Date()) {
       const secsLeft = Math.ceil(
-        (new Date(attempt.locked_until) - Date.now()) / 1000,
-      );
-      await logAction(
-        req,
-        "account_locked",
-        `Account locked for ${user.email} after ${UserModel.MAX_ATTEMPTS} failed attempts`,
+        (new Date(user.locked_until) - Date.now()) / 1000,
       );
       return res.status(423).json({
-        error: "Account locked after too many failed attempts.",
-        locked_until: attempt.locked_until,
+        error:
+          "Account is temporarily locked due to too many failed login attempts.",
+        locked_until: user.locked_until,
         seconds_left: secsLeft,
       });
     }
 
-    return res.status(401).json({
-      error: `Invalid credentials. ${remaining} attempt${remaining !== 1 ? "s" : ""} remaining before lockout.`,
-      attempts_remaining: remaining,
-    });
+    const match = await bcrypt.compare(password, user.password_hash);
+    if (!match) {
+      const attempt = await UserModel.recordFailedAttempt(user.user_id);
+      const remaining = UserModel.MAX_ATTEMPTS - attempt.login_attempts;
+
+      await logAction(
+        req,
+        "login_failure",
+        `Failed login attempt for ${user.email} (attempt ${attempt.login_attempts}/${UserModel.MAX_ATTEMPTS})`,
+      );
+
+      if (attempt.login_attempts >= UserModel.MAX_ATTEMPTS) {
+        const secsLeft = Math.ceil(
+          (new Date(attempt.locked_until) - Date.now()) / 1000,
+        );
+        await logAction(
+          req,
+          "account_locked",
+          `Account locked for ${user.email} after ${UserModel.MAX_ATTEMPTS} failed attempts`,
+        );
+        return res.status(423).json({
+          error: "Account locked after too many failed attempts.",
+          locked_until: attempt.locked_until,
+          seconds_left: secsLeft,
+        });
+      }
+
+      return res.status(401).json({
+        error: `Invalid credentials. ${remaining} attempt${remaining !== 1 ? "s" : ""} remaining before lockout.`,
+        attempts_remaining: remaining,
+      });
+    }
+
+    await UserModel.resetLoginAttempts(user.user_id);
+
+    await UserModel.updateLastSeen(user.user_id);
+
+    await logAction(
+      req,
+      "login_success",
+      `User ${user.email} logged in successfully`,
+    );
+
+    return sendTokens(res, user, 200);
+  } catch (err) {
+    console.error("[login]", err);
+    return res
+      .status(500)
+      .json({ error: "Something went wrong. Please try again later." });
   }
-
-  // 6. Successful login — reset counter
-  await UserModel.resetLoginAttempts(user.user_id);
-
-  // 7. Update last seen
-  await UserModel.updateLastSeen(user.user_id);
-
-  // 8. Log successful login
-  await logAction(
-    req,
-    "login_success",
-    `User ${user.email} logged in successfully`,
-  );
-
-  // 9. Issue tokens
-  return sendTokens(res, user, 200);
 };
 
-/**
- * GET /api/auth/me — returns current user (requireAuth guard must run first)
- */
 const getMe = async (req, res) => {
   const user = await UserModel.findById(req.user.user_id);
   if (!user) return res.status(404).json({ error: "User not found" });
-  return res.json({ user });
+  return res.json({
+    user: {
+      id: user.user_id,
+      fullName: user.full_name,
+      email: user.email,
+      role: user.role,
+      phone: user.phone || null,
+    },
+  });
 };
 
-/**
- * POST /api/auth/logout — clears cookies and blacklists the current token
- */
 const logout = (req, res) => {
-  // Blacklist the current access token so it can't be reused
+
   const token =
     req.cookies?.token ||
     (req.headers["authorization"]?.startsWith("Bearer ")
@@ -279,7 +268,7 @@ const logout = (req, res) => {
         tokenBlacklist.add(token, decoded.exp * 1000);
       }
     } catch {
-      // Token may be malformed — ignore, we're clearing it anyway
+
     }
   }
 
@@ -297,9 +286,6 @@ const logout = (req, res) => {
   return res.json({ message: "Logged out successfully" });
 };
 
-/**
- * POST /api/auth/refresh — issues new access token using refresh token cookie
- */
 const refresh = (req, res) => {
   const refreshToken = req.cookies?.refreshToken;
   if (!refreshToken) {
@@ -324,10 +310,6 @@ const refresh = (req, res) => {
   }
 };
 
-/**
- * PATCH /api/auth/status
- * Staff-only: set availability_status to 'available' or 'unavailable'.
- */
 const updateStatus = async (req, res) => {
   const { status } = req.body;
   if (!["available", "unavailable"].includes(status)) {
@@ -349,11 +331,6 @@ const updateStatus = async (req, res) => {
   }
 };
 
-/**
- * POST /api/auth/forgot-password
- * Body: { email }
- * Sends a 6-digit OTP to the registered email.
- */
 const forgotPassword = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -370,11 +347,9 @@ const forgotPassword = async (req, res) => {
         .json({ error: "No account found with that email address." });
     }
     if (!user.is_active) {
-      return res
-        .status(403)
-        .json({
-          error: "This account has been deactivated. Contact an administrator.",
-        });
+      return res.status(403).json({
+        error: "This account has been deactivated. Contact an administrator.",
+      });
     }
 
     const code = otpStore.create(email);
@@ -396,11 +371,6 @@ const forgotPassword = async (req, res) => {
   }
 };
 
-/**
- * POST /api/auth/reset-password
- * Body: { email, code, newPassword }
- * Verifies the OTP and sets the new password.
- */
 const resetPassword = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -409,7 +379,6 @@ const resetPassword = async (req, res) => {
 
   const { email, code, newPassword } = req.body;
 
-  // Verify OTP
   const result = otpStore.verify(email, code);
   if (!result.valid) {
     return res.status(400).json({ error: result.reason });
@@ -424,7 +393,6 @@ const resetPassword = async (req, res) => {
     const password_hash = await bcrypt.hash(newPassword, SALT_ROUNDS);
     await UserModel.updatePassword(user.user_id, password_hash);
 
-    // Reset any lockout state
     await UserModel.resetLoginAttempts(user.user_id);
 
     await logAction(
@@ -444,6 +412,72 @@ const resetPassword = async (req, res) => {
   }
 };
 
+const STAFF_DELETE_WORKING_DAYS = 5;
+
+const deleteAccount = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  try {
+    const { password } = req.body;
+    const userId = req.user.user_id;
+    const role = req.user.role;
+
+    if (role === "admin") {
+      return res
+        .status(403)
+        .json({ error: "Admin accounts cannot be self-deleted." });
+    }
+
+    const user = await UserModel.findByEmail(req.user.email);
+    if (!user) {
+      return res.status(404).json({ error: "Account not found." });
+    }
+
+    const match = await bcrypt.compare(password, user.password_hash);
+    if (!match) {
+      return res.status(401).json({ error: "Incorrect password." });
+    }
+
+    if (role === "staff") {
+      const { deleteAt } = await UserModel.scheduleDeleteDays(
+        userId,
+        STAFF_DELETE_WORKING_DAYS,
+      );
+
+      await logAction(
+        req,
+        "account_deletion_requested",
+        `Staff ${user.email} requested account deletion — scheduled for ${deleteAt.toISOString()}`,
+      );
+
+      return res.json({
+        message: `Your resignation request has been submitted. Your account will be deactivated now and permanently deleted after ${STAFF_DELETE_WORKING_DAYS} working days.`,
+        scheduledAt: deleteAt,
+      });
+    }
+
+    await UserModel.scheduleDelete(userId);
+
+    await logAction(
+      req,
+      "account_deleted",
+      `Health user ${user.email} deleted their account`,
+    );
+
+    return res.json({
+      message: "Your account has been scheduled for deletion.",
+    });
+  } catch (err) {
+    console.error("[deleteAccount]", err);
+    return res
+      .status(500)
+      .json({ error: "Failed to delete account. Please try again later." });
+  }
+};
+
 module.exports = {
   register,
   login,
@@ -453,4 +487,5 @@ module.exports = {
   updateStatus,
   forgotPassword,
   resetPassword,
+  deleteAccount,
 };

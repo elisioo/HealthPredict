@@ -1,4 +1,9 @@
 const rateLimit = require("express-rate-limit");
+const { ipKeyGenerator } = require("express-rate-limit");
+
+// Helper: use user ID when authenticated, otherwise fall back to IPv6-safe IP key
+const userOrIp = (req) =>
+  req.user ? String(req.user.user_id) : ipKeyGenerator(req.ip);
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -24,7 +29,7 @@ const predictionLimiter = rateLimit({
   max: 5, // 5 predictions per minute
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => (req.user ? String(req.user.user_id) : req.ip),
+  keyGenerator: userOrIp,
   message: { error: "Too many predictions. Maximum 5 per minute." },
 });
 
@@ -34,7 +39,7 @@ const appointmentLimiter = rateLimit({
   max: 10, // 10 bookings per hour
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => (req.user ? String(req.user.user_id) : req.ip),
+  keyGenerator: userOrIp,
   message: { error: "Too many appointment requests. Please try again later." },
 });
 
@@ -44,9 +49,17 @@ const messageLimiter = rateLimit({
   max: 20, // 20 messages per minute
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => (req.user ? String(req.user.user_id) : req.ip),
+  keyGenerator: userOrIp,
   message: { error: "Too many messages. Please slow down." },
 });
+
+module.exports = {
+  authLimiter,
+  generalLimiter,
+  predictionLimiter,
+  appointmentLimiter,
+  messageLimiter,
+};
 
 module.exports = {
   authLimiter,

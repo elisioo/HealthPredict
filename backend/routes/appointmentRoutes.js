@@ -13,22 +13,16 @@ const {
 
 const router = express.Router();
 
-// All appointment routes require authentication
 router.use(requireAuth);
 
-// GET /api/appointments/staff-list  — active staff available for booking
 router.get("/staff-list", getStaffList);
 
-// GET /api/appointments/my  — patient: view own appointments
 router.get("/my", requireRole("health_user"), getMyAppointments);
 
-// GET /api/appointments/staff  — staff/admin: view their assigned appointments
 router.get("/staff", requireRole("admin", "staff"), getStaffAppointments);
 
-// GET /api/appointments/all  — admin only: all appointments in system
 router.get("/all", requireRole("admin"), getAllAppointments);
 
-// POST /api/appointments  — patient books an appointment
 router.post(
   "/",
   appointmentLimiter,
@@ -47,7 +41,6 @@ router.post(
   bookAppointment,
 );
 
-// PATCH /api/appointments/:id/status  — update an appointment's status
 router.patch(
   "/:id/status",
   [

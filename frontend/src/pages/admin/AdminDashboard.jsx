@@ -2,50 +2,18 @@ import React, { useState, useEffect } from "react";
 import DashboardLayout from "../../components/DashboardLayout";
 import { NAV_BY_ROLE } from "../../components/navConfig";
 import { adminApi } from "../../api/authApi";
+import stripTags from "../../utils/stripTags";
 
-function BarChart() {
-  const data = [
-    { day: "Mon", value: 42 },
-    { day: "Tue", value: 68 },
-    { day: "Wed", value: 55 },
-    { day: "Thu", value: 80 },
-    { day: "Fri", value: 73 },
-    { day: "Sat", value: 35 },
-    { day: "Sun", value: 48 },
-  ];
-  const maxVal = Math.max(...data.map((d) => d.value));
-  return (
-    <div className="flex items-end justify-between gap-2 h-48 px-2">
-      {data.map((d) => (
-        <div key={d.day} className="flex flex-col items-center flex-1 gap-1">
-          <div
-            className="w-full flex items-end justify-center"
-            style={{ height: "160px" }}
-          >
-            <div
-              className="w-full bg-primary rounded-t-lg opacity-80 hover:opacity-100 transition-all"
-              style={{ height: `${(d.value / maxVal) * 100}%` }}
-              title={d.value}
-            ></div>
-          </div>
-          <span className="text-xs text-gray-500">{d.day}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-// Risk Distribution — uses real counts from adminApi.getStats()
-function RiskDistribution({ total = 0, high = 0 }) {
-  const highPct = total > 0 ? ((high / total) * 100).toFixed(1) : 0;
-  const lowPct =
-    total > 0 ? ((((total - high) * 0.75) / total) * 100).toFixed(1) : 0;
-  const medPct =
-    total > 0 ? (100 - parseFloat(highPct) - parseFloat(lowPct)).toFixed(1) : 0;
+function RiskDistribution({ total = 0, high = 0, moderate = 0, low = 0 }) {
+  const pct = (n) => (total > 0 ? ((n / total) * 100).toFixed(1) : "0");
   const risks = [
-    { label: "Low Risk", pct: parseFloat(lowPct), color: "bg-green-500" },
-    { label: "Medium Risk", pct: parseFloat(medPct), color: "bg-yellow-500" },
-    { label: "High Risk", pct: parseFloat(highPct), color: "bg-red-500" },
+    { label: "Low Risk", pct: parseFloat(pct(low)), color: "bg-green-500" },
+    {
+      label: "Medium Risk",
+      pct: parseFloat(pct(moderate)),
+      color: "bg-yellow-500",
+    },
+    { label: "High Risk", pct: parseFloat(pct(high)), color: "bg-red-500" },
   ];
   return (
     <div className="space-y-5 mt-4">
@@ -389,35 +357,132 @@ function UserTable({ rows, loading, onEdit, isPatient = false }) {
   );
 }
 
+const PAGE_SIZE = 10;
+
+function Pagination({ page, totalPages, onPage }) {
+  if (totalPages <= 1) return null;
+  const start = Math.max(1, Math.min(page - 2, totalPages - 4));
+  const end = Math.min(totalPages, start + 4);
+  const pages = [];
+  for (let i = start; i <= end; i++) pages.push(i);
+  return (
+    <div className="flex items-center justify-between pt-4 border-t border-gray-100 mt-2">
+      <p className="text-xs text-gray-500">
+        Page {page} of {totalPages}
+      </p>
+      <div className="flex items-center gap-1">
+        <button
+          onClick={() => onPage(page - 1)}
+          disabled={page === 1}
+          className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        >
+          <i className="fa-solid fa-chevron-left text-xs"></i>
+        </button>
+        {pages.map((p) => (
+          <button
+            key={p}
+            onClick={() => onPage(p)}
+            className={`w-8 h-8 flex items-center justify-center rounded-lg text-sm font-medium transition-colors ${
+              p === page
+                ? "bg-primary text-white"
+                : "text-gray-600 hover:bg-gray-100"
+            }`}
+          >
+            {p}
+          </button>
+        ))}
+        <button
+          onClick={() => onPage(page + 1)}
+          disabled={page === totalPages}
+          className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        >
+          <i className="fa-solid fa-chevron-right text-xs"></i>
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function AdminDashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [apiStats, setApiStats] = useState(null);
-  const [users, setUsers] = useState([]);
-  const [loadingUsers, setLoadingUsers] = useState(true);
   const [editingUser, setEditingUser] = useState(null);
   const [successMsg, setSuccessMsg] = useState("");
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  const loadData = () => {
+  // Staff & Admins table
+  const [staffUsers, setStaffUsers] = useState([]);
+  const [staffTotal, setStaffTotal] = useState(0);
+  const [staffPage, setStaffPage] = useState(1);
+  const [loadingStaff, setLoadingStaff] = useState(true);
+
+  // Patients table
+  const [patientUsers, setPatientUsers] = useState([]);
+  const [patientTotal, setPatientTotal] = useState(0);
+  const [patientPage, setPatientPage] = useState(1);
+  const [loadingPatients, setLoadingPatients] = useState(true);
+
+  // Stats — load once and auto-refresh every 30 seconds
+  useEffect(() => {
     adminApi
       .getStats()
       .then(({ data }) => setApiStats(data))
       .catch(() => {});
-    setLoadingUsers(true);
-    adminApi
-      .getUsers()
-      .then(({ data }) => setUsers(data.users || []))
-      .catch(() => {})
-      .finally(() => setLoadingUsers(false));
-  };
-
-  useEffect(() => {
-    loadData();
+    const interval = setInterval(() => {
+      adminApi
+        .getStats()
+        .then(({ data }) => setApiStats(data))
+        .catch(() => {});
+    }, 30000);
+    return () => clearInterval(interval);
   }, []);
+
+  // Staff/Admins — fetch on page, search, or save change
+  useEffect(() => {
+    setLoadingStaff(true);
+    adminApi
+      .getUsers({
+        role: "admin,staff",
+        page: staffPage,
+        limit: PAGE_SIZE,
+        ...(searchQuery && { search: searchQuery }),
+      })
+      .then(({ data }) => {
+        setStaffUsers(data.users || []);
+        setStaffTotal(data.total || 0);
+      })
+      .catch(() => {})
+      .finally(() => setLoadingStaff(false));
+  }, [staffPage, searchQuery, refreshKey]);
+
+  // Patients — fetch on page, search, or save change
+  useEffect(() => {
+    setLoadingPatients(true);
+    adminApi
+      .getUsers({
+        role: "health_user",
+        page: patientPage,
+        limit: PAGE_SIZE,
+        ...(searchQuery && { search: searchQuery }),
+      })
+      .then(({ data }) => {
+        setPatientUsers(data.users || []);
+        setPatientTotal(data.total || 0);
+      })
+      .catch(() => {})
+      .finally(() => setLoadingPatients(false));
+  }, [patientPage, searchQuery, refreshKey]);
+
+  const handleSearch = (val) => {
+    setSearchQuery(val);
+    setStaffPage(1);
+    setPatientPage(1);
+  };
 
   const handleSaved = (msg) => {
     setEditingUser(null);
     setSuccessMsg(msg);
-    loadData();
+    setRefreshKey((k) => k + 1);
     setTimeout(() => setSuccessMsg(""), 3500);
   };
 
@@ -430,7 +495,9 @@ function AdminDashboard() {
       icon: "fa-chart-line",
       bg: "bg-blue-50",
       iconColor: "text-primary",
-      badge: "All time",
+      badge: apiStats
+        ? `${apiStats.today?.predictions ?? 0} today`
+        : "All time",
       badgeBg: "bg-blue-50 text-blue-600",
     },
     {
@@ -443,7 +510,9 @@ function AdminDashboard() {
       icon: "fa-triangle-exclamation",
       bg: "bg-red-50",
       iconColor: "text-red-500",
-      badge: "Critical",
+      badge: apiStats
+        ? `${(apiStats.predictions?.high_risk ?? 0).toLocaleString()} total`
+        : "Critical",
       badgeBg: "bg-red-50 text-red-600",
     },
     {
@@ -452,7 +521,7 @@ function AdminDashboard() {
       icon: "fa-users",
       bg: "bg-purple-50",
       iconColor: "text-purple-500",
-      badge: `${apiStats?.users?.active ?? "—"} Active`,
+      badge: apiStats ? `${apiStats.today?.new_users ?? 0} new today` : "—",
       badgeBg: "bg-purple-50 text-purple-600",
     },
     {
@@ -466,19 +535,8 @@ function AdminDashboard() {
     },
   ];
 
-  const staffAdmins = users.filter(
-    (u) =>
-      u.role !== "health_user" &&
-      ((u.full_name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (u.email || "").toLowerCase().includes(searchQuery.toLowerCase())),
-  );
-
-  const patients = users.filter(
-    (u) =>
-      u.role === "health_user" &&
-      ((u.full_name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (u.email || "").toLowerCase().includes(searchQuery.toLowerCase())),
-  );
+  const staffTotalPages = Math.ceil(staffTotal / PAGE_SIZE);
+  const patientTotalPages = Math.ceil(patientTotal / PAGE_SIZE);
 
   return (
     <DashboardLayout
@@ -543,85 +601,65 @@ function AdminDashboard() {
         ))}
       </section>
 
-      {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Prediction Trends */}
-        <section className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-gray-900">
-              Prediction Trends
-            </h3>
-            <select className="text-sm border border-gray-200 rounded-lg px-3 py-2 text-gray-600 focus:outline-none focus:ring-2 focus:ring-primary">
-              <option>Last 7 Days</option>
-              <option>Last 30 Days</option>
-              <option>Last 90 Days</option>
-            </select>
-          </div>
-          <BarChart />
-        </section>
+      {/* Risk Distribution */}
+      <section className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-lg font-semibold text-gray-900">
+            Risk Distribution
+          </h3>
+          <button className="text-sm text-primary hover:text-primary-dark font-medium">
+            View Details
+          </button>
+        </div>
+        <p className="text-sm text-gray-500 mb-2">
+          Based on{" "}
+          {apiStats ? (apiStats.predictions?.total ?? 0).toLocaleString() : "—"}{" "}
+          total predictions
+        </p>
+        <RiskDistribution
+          total={apiStats?.predictions?.total ?? 0}
+          high={apiStats?.predictions?.high_risk ?? 0}
+          moderate={apiStats?.predictions?.moderate_risk ?? 0}
+          low={apiStats?.predictions?.low_risk ?? 0}
+        />
 
-        {/* Risk Distribution */}
-        <section className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-lg font-semibold text-gray-900">
-              Risk Distribution
-            </h3>
-            <button className="text-sm text-primary hover:text-primary-dark font-medium">
-              View Details
-            </button>
-          </div>
-          <p className="text-sm text-gray-500 mb-2">
-            Based on{" "}
-            {apiStats
-              ? (apiStats.predictions?.total ?? 0).toLocaleString()
-              : "—"}{" "}
-            total predictions
-          </p>
-          <RiskDistribution
-            total={apiStats?.predictions?.total ?? 0}
-            high={apiStats?.predictions?.high_risk ?? 0}
-          />
-
-          <div className="grid grid-cols-3 gap-3 mt-6">
-            {(() => {
-              const tot = apiStats?.predictions?.total ?? 0;
-              const high = apiStats?.predictions?.high_risk ?? 0;
-              const low = tot > 0 ? Math.round((tot - high) * 0.75) : 0;
-              const med = tot > 0 ? tot - high - low : 0;
-              return [
-                {
-                  label: "Low",
-                  value: tot > 0 ? low.toLocaleString() : "—",
-                  color: "text-green-600",
-                  bg: "bg-green-50",
-                },
-                {
-                  label: "Medium",
-                  value: tot > 0 ? med.toLocaleString() : "—",
-                  color: "text-yellow-600",
-                  bg: "bg-yellow-50",
-                },
-                {
-                  label: "High",
-                  value: tot > 0 ? high.toLocaleString() : "—",
-                  color: "text-red-600",
-                  bg: "bg-red-50",
-                },
-              ];
-            })().map((item) => (
-              <div
-                key={item.label}
-                className={`${item.bg} rounded-xl p-3 text-center`}
-              >
-                <p className={`text-lg font-bold ${item.color}`}>
-                  {item.value}
-                </p>
-                <p className="text-xs text-gray-500">{item.label} Risk</p>
-              </div>
-            ))}
-          </div>
-        </section>
-      </div>
+        <div className="grid grid-cols-3 gap-3 mt-6">
+          {(() => {
+            const tot = apiStats?.predictions?.total ?? 0;
+            const high = apiStats?.predictions?.high_risk ?? 0;
+            const low = apiStats?.predictions?.low_risk ?? 0;
+            const med = apiStats?.predictions?.moderate_risk ?? 0;
+            return [
+              {
+                label: "Low",
+                value: tot > 0 ? low.toLocaleString() : "—",
+                color: "text-green-600",
+                bg: "bg-green-50",
+              },
+              {
+                label: "Medium",
+                value: tot > 0 ? med.toLocaleString() : "—",
+                color: "text-yellow-600",
+                bg: "bg-yellow-50",
+              },
+              {
+                label: "High",
+                value: tot > 0 ? high.toLocaleString() : "—",
+                color: "text-red-600",
+                bg: "bg-red-50",
+              },
+            ];
+          })().map((item) => (
+            <div
+              key={item.label}
+              className={`${item.bg} rounded-xl p-3 text-center`}
+            >
+              <p className={`text-lg font-bold ${item.color}`}>{item.value}</p>
+              <p className="text-xs text-gray-500">{item.label} Risk</p>
+            </div>
+          ))}
+        </div>
+      </section>
 
       {/* Staff & Admins */}
       <section className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
@@ -640,7 +678,7 @@ function AdminDashboard() {
               <input
                 type="text"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => handleSearch(stripTags(e.target.value))}
                 placeholder="Search users..."
                 className="w-full sm:w-64 pl-10 pr-4 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary"
               />
@@ -656,9 +694,14 @@ function AdminDashboard() {
         </div>
 
         <UserTable
-          rows={staffAdmins}
-          loading={loadingUsers}
+          rows={staffUsers}
+          loading={loadingStaff}
           onEdit={setEditingUser}
+        />
+        <Pagination
+          page={staffPage}
+          totalPages={staffTotalPages}
+          onPage={setStaffPage}
         />
       </section>
 
@@ -672,15 +715,20 @@ function AdminDashboard() {
             </p>
           </div>
           <span className="text-xs font-medium bg-green-50 text-green-700 px-3 py-1.5 rounded-full">
-            {patients.length} patient{patients.length !== 1 ? "s" : ""}
+            {patientTotal} patient{patientTotal !== 1 ? "s" : ""}
           </span>
         </div>
 
         <UserTable
-          rows={patients}
-          loading={loadingUsers}
+          rows={patientUsers}
+          loading={loadingPatients}
           onEdit={setEditingUser}
           isPatient
+        />
+        <Pagination
+          page={patientPage}
+          totalPages={patientTotalPages}
+          onPage={setPatientPage}
         />
       </section>
     </DashboardLayout>

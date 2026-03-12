@@ -1,7 +1,7 @@
 const db = require("../database/db");
 
 const PredictionModel = {
-  /** Get all predictions made by or for a specific user, newest first */
+
   async getByUser(userId) {
     const [rows] = await db.query(
       `SELECT
@@ -17,7 +17,6 @@ const PredictionModel = {
     return rows;
   },
 
-  /** Save a new prediction record */
   async create({
     userId,
     gender,

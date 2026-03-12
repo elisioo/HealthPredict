@@ -3,6 +3,7 @@ import DashboardLayout from "../../components/DashboardLayout";
 import { NAV_BY_ROLE } from "../../components/navConfig";
 import { useAuth } from "../../context/AuthContext";
 import { appointmentApi } from "../../api/authApi";
+import stripTags from "../../utils/stripTags";
 
 /* ------------------------------------------------------------------ */
 /* Helpers                                                              */
@@ -161,7 +162,7 @@ function BookModal({ staffList, onClose, onBooked }) {
             </label>
             <textarea
               value={notes}
-              onChange={(e) => setNotes(e.target.value)}
+              onChange={(e) => setNotes(stripTags(e.target.value))}
               maxLength={500}
               rows={3}
               placeholder="Describe the reason for your visit..."

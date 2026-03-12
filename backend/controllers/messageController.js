@@ -1,10 +1,6 @@
 const { validationResult } = require("express-validator");
 const MessageModel = require("../models/messageModel");
 
-/**
- * GET /api/messages/inbox
- * Returns the list of conversation contacts with last message + unread count.
- */
 const getInbox = async (req, res) => {
   try {
     const inbox = await MessageModel.getInbox(req.user.user_id);
@@ -15,10 +11,6 @@ const getInbox = async (req, res) => {
   }
 };
 
-/**
- * GET /api/messages/staff
- * Returns list of staff/admin users (for patients to pick a recipient).
- */
 const getStaffList = async (req, res) => {
   try {
     const staff = await MessageModel.getStaffList();
@@ -29,10 +21,6 @@ const getStaffList = async (req, res) => {
   }
 };
 
-/**
- * GET /api/messages/unread
- * Returns the unread message count for the logged-in user.
- */
 const getUnreadCount = async (req, res) => {
   try {
     const count = await MessageModel.unreadCount(req.user.user_id);
@@ -42,11 +30,6 @@ const getUnreadCount = async (req, res) => {
   }
 };
 
-/**
- * GET /api/messages/:userId
- * Returns full conversation thread between the current user and :userId.
- * Also marks incoming messages as read.
- */
 const getConversation = async (req, res) => {
   const otherId = parseInt(req.params.userId, 10);
   if (!otherId || isNaN(otherId)) {
@@ -66,11 +49,6 @@ const getConversation = async (req, res) => {
   }
 };
 
-/**
- * POST /api/messages
- * Body: { receiver_id, message }
- * Send a new message.
- */
 const sendMessage = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {

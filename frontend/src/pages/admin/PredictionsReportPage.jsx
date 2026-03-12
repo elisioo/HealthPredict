@@ -6,9 +6,6 @@ import { useToast } from "../../context/ToastContext";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
-/* ------------------------------------------------------------------ */
-/* Constants                                                            */
-/* ------------------------------------------------------------------ */
 const RISK_BADGE = {
   low: "bg-green-100 text-green-700",
   moderate: "bg-amber-100 text-amber-700",
@@ -38,9 +35,6 @@ function fmtDateTime(iso) {
   });
 }
 
-/* ------------------------------------------------------------------ */
-/* CSV export                                                           */
-/* ------------------------------------------------------------------ */
 function exportCSV(predictions) {
   const headers = [
     "ID",
@@ -92,9 +86,6 @@ function exportCSV(predictions) {
   URL.revokeObjectURL(url);
 }
 
-/* ------------------------------------------------------------------ */
-/* PDF export                                                           */
-/* ------------------------------------------------------------------ */
 function exportPDF(predictions) {
   const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
 
@@ -159,9 +150,6 @@ function exportPDF(predictions) {
   doc.save(`predictions_report_${new Date().toISOString().slice(0, 10)}.pdf`);
 }
 
-/* ------------------------------------------------------------------ */
-/* Stat chip                                                             */
-/* ------------------------------------------------------------------ */
 function StatCard({ label, value, color = "text-slate-800", bg = "bg-white" }) {
   return (
     <div
@@ -173,9 +161,6 @@ function StatCard({ label, value, color = "text-slate-800", bg = "bg-white" }) {
   );
 }
 
-/* ------------------------------------------------------------------ */
-/* Page                                                                 */
-/* ------------------------------------------------------------------ */
 export default function PredictionsReportPage() {
   const { showToast } = useToast();
 

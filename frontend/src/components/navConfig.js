@@ -27,6 +27,7 @@ export const NAV_BY_ROLE = {
       label: "Messages",
       page: "/admin/messages",
     },
+    { icon: "fa-user-doctor", label: "Medical Team", page: "/staff/team" },
   ],
   staff: [
     { icon: "fa-house", label: "Dashboard", page: "/staff" },
@@ -35,7 +36,6 @@ export const NAV_BY_ROLE = {
       icon: "fa-folder-open",
       label: "Patient Records",
       page: "/staff/patients",
-      badge: "12",
     },
     {
       icon: "fa-calendar-check",

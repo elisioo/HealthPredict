@@ -62,7 +62,16 @@ export function AuthProvider({ children }) {
   }, []);
 
   const register = useCallback(
-    async ({ firstName, lastName, mi, email, password, role, phone, captchaToken }) => {
+    async ({
+      firstName,
+      lastName,
+      mi,
+      email,
+      password,
+      role,
+      phone,
+      captchaToken,
+    }) => {
       const { data } = await authApi.register({
         firstName,
         lastName,
@@ -90,8 +99,17 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
+  // Re-fetch the current user from the DB and update context + localStorage
+  const refreshUser = useCallback(async () => {
+    const { data } = await authApi.getMe();
+    setUser(data.user);
+    return data.user;
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider
+      value={{ user, loading, login, register, logout, refreshUser }}
+    >
       {children}
     </AuthContext.Provider>
   );

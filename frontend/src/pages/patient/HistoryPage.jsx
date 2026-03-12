@@ -3,6 +3,7 @@ import DashboardLayout from "../../components/DashboardLayout";
 import { NAV_BY_ROLE } from "../../components/navConfig";
 import { useAuth } from "../../context/AuthContext";
 import { predictionApi } from "../../api/authApi";
+import downloadPredictionPDF from "../../utils/downloadPredictionPDF";
 
 const riskStyle = {
   high: {
@@ -90,6 +91,7 @@ export default function HistoryPage() {
                     "BMI",
                     "Blood Glucose",
                     "HbA1c",
+                    "",
                   ].map((h) => (
                     <th
                       key={h}
@@ -142,6 +144,34 @@ export default function HistoryPage() {
                       </td>
                       <td className="px-5 py-4 text-sm text-gray-600">
                         {row.HbA1c_level ?? "—"}
+                      </td>
+                      <td className="px-5 py-4 text-right whitespace-nowrap">
+                        <button
+                          onClick={() =>
+                            downloadPredictionPDF({
+                              riskLevel: row.risk_level,
+                              probability: row.probability,
+                              diabetesResult: row.diabetes_result,
+                              patientName: user?.fullName || "",
+                              date: fmt(row.created_at),
+                              vitals: {
+                                bmi: row.bmi,
+                                blood_glucose_level: row.blood_glucose_level,
+                                HbA1c_level: row.HbA1c_level,
+                                age: row.age,
+                                gender: row.gender,
+                                hypertension: row.hypertension,
+                                heart_disease: row.heart_disease,
+                                smoking_history: row.smoking_history,
+                              },
+                            })
+                          }
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                          title="Download PDF report"
+                        >
+                          <i className="fa-solid fa-file-pdf"></i>
+                          PDF
+                        </button>
                       </td>
                     </tr>
                   );

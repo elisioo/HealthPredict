@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../../components/DashboardLayout";
 import { NAV_BY_ROLE } from "../../components/navConfig";
 import { useAuth } from "../../context/AuthContext";
@@ -7,48 +6,24 @@ import { adminApi } from "../../api/authApi";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
-const SUMMARY = [
-  {
-    label: "Total Patients Screened",
-    value: "2,847",
-    change: "+12%",
-    up: true,
-    icon: "fa-users",
-    bg: "bg-blue-100",
-    text: "text-blue-600",
-  },
-  {
-    label: "High Risk Percentage",
-    value: "18.4%",
-    change: "+5%",
-    up: false,
-    icon: "fa-exclamation-triangle",
-    bg: "bg-red-100",
-    text: "text-red-600",
-  },
-  {
-    label: "Average Risk Score",
-    value: "42.6",
-    change: "0%",
-    up: null,
-    icon: "fa-chart-line",
-    bg: "bg-purple-100",
-    text: "text-purple-600",
-  },
-  {
-    label: "Monthly Predictions",
-    value: "324",
-    change: "+8%",
-    up: true,
-    icon: "fa-calendar-check",
-    bg: "bg-green-100",
-    text: "text-green-600",
-  },
+const MONTH_NAMES = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
 ];
 
 // Simple SVG bar chart
 function BarChart({ data, color = "#2563EB" }) {
-  const max = Math.max(...data.map((d) => d.value));
+  const max = Math.max(...data.map((d) => d.value), 1);
   return (
     <div className="flex items-end gap-2 h-52 pt-4">
       {data.map((d) => (
@@ -74,12 +49,24 @@ function BarChart({ data, color = "#2563EB" }) {
 }
 
 // Donut chart using SVG
-function DonutChart() {
-  const segments = [
-    { label: "Low Risk", pct: 61.6, color: "#22c55e" },
-    { label: "Moderate", pct: 20, color: "#eab308" },
-    { label: "High Risk", pct: 18.4, color: "#ef4444" },
-  ];
+function DonutChart({ low = 0, moderate = 0, high = 0 }) {
+  const total = low + moderate + high;
+  const segments =
+    total > 0
+      ? [
+          { label: "Low Risk", pct: (low / total) * 100, color: "#22c55e" },
+          {
+            label: "Moderate",
+            pct: (moderate / total) * 100,
+            color: "#eab308",
+          },
+          { label: "High Risk", pct: (high / total) * 100, color: "#ef4444" },
+        ]
+      : [
+          { label: "Low Risk", pct: 0, color: "#22c55e" },
+          { label: "Moderate", pct: 0, color: "#eab308" },
+          { label: "High Risk", pct: 0, color: "#ef4444" },
+        ];
   const r = 60,
     cx = 80,
     cy = 80,
@@ -115,7 +102,7 @@ function DonutChart() {
           fontWeight="bold"
           fill="#1e293b"
         >
-          2,847
+          {total.toLocaleString()}
         </text>
         <text
           x={cx}
@@ -135,7 +122,7 @@ function DonutChart() {
               style={{ backgroundColor: s.color }}
             ></div>
             <span className="text-xs text-gray-600">
-              {s.label} ({s.pct}%)
+              {s.label} ({s.pct.toFixed(1)}%)
             </span>
           </div>
         ))}
@@ -144,100 +131,98 @@ function DonutChart() {
   );
 }
 
-const trendData = [
-  { label: "Jul", value: 210 },
-  { label: "Aug", value: 245 },
-  { label: "Sep", value: 280 },
-  { label: "Oct", value: 260 },
-  { label: "Nov", value: 305 },
-  { label: "Dec", value: 290 },
-  { label: "Jan", value: 324 },
-];
-
-const RECENT_REPORTS = [
-  {
-    name: "Monthly Risk Assessment Report",
-    date: "Jan 15, 2025",
-    type: "PDF",
-    size: "2.4 MB",
-  },
-  {
-    name: "Q4 2024 Analytics Summary",
-    date: "Jan 1, 2025",
-    type: "Excel",
-    size: "1.8 MB",
-  },
-  {
-    name: "High Risk Patient Overview",
-    date: "Dec 28, 2024",
-    type: "PDF",
-    size: "3.1 MB",
-  },
-  {
-    name: "Model Performance Report",
-    date: "Dec 15, 2024",
-    type: "PDF",
-    size: "1.2 MB",
-  },
-];
+const PERIOD_MONTHS = {
+  "Last 6 Months": 6,
+  "Last 7 Months": 7,
+  "Last Year": 12,
+};
 
 export default function ReportsPage() {
-  const navigate = useNavigate();
   const { user } = useAuth();
   const [period, setPeriod] = useState("Last 7 Months");
   const [stats, setStats] = useState(null);
   const [exporting, setExporting] = useState(false);
+  const [recentPredictions, setRecentPredictions] = useState([]);
 
   useEffect(() => {
     adminApi
       .getStats()
       .then(({ data }) => setStats(data))
       .catch(() => {});
+    adminApi
+      .getAllPredictions({ limit: 5 })
+      .then(({ data }) => setRecentPredictions(data.predictions || []))
+      .catch(() => {});
   }, []);
 
-  const LIVE_SUMMARY = stats
-    ? [
-        {
-          label: "Total Patients Screened",
-          value: stats.users?.patients?.toLocaleString() ?? "—",
-          change: "+12%",
-          up: true,
-          icon: "fa-users",
-          bg: "bg-blue-100",
-          text: "text-blue-600",
-        },
-        {
-          label: "High Risk Cases",
-          value:
-            stats.predictions?.high_risk != null
-              ? `${((stats.predictions.high_risk / (stats.predictions.total || 1)) * 100).toFixed(1)}%`
-              : "—",
-          change: "+5%",
-          up: false,
-          icon: "fa-exclamation-triangle",
-          bg: "bg-red-100",
-          text: "text-red-600",
-        },
-        {
-          label: "Total Predictions",
-          value: stats.predictions?.total?.toLocaleString() ?? "—",
-          change: "All time",
-          up: null,
-          icon: "fa-chart-line",
-          bg: "bg-purple-100",
-          text: "text-purple-600",
-        },
-        {
-          label: "Registered Users",
-          value: stats.users?.total?.toLocaleString() ?? "—",
-          change: "Active",
-          up: null,
-          icon: "fa-calendar-check",
-          bg: "bg-green-100",
-          text: "text-green-600",
-        },
-      ]
-    : SUMMARY;
+  const pred = stats?.predictions || {};
+  const todayData = stats?.today || {};
+
+  const summaryCards = [
+    {
+      label: "Total Predictions",
+      value: pred.total != null ? pred.total.toLocaleString() : "—",
+      change:
+        todayData.predictions != null ? `${todayData.predictions} today` : "",
+      up: todayData.predictions > 0 ? true : null,
+      icon: "fa-chart-line",
+      bg: "bg-purple-100",
+      text: "text-purple-600",
+    },
+    {
+      label: "High Risk Cases",
+      value:
+        pred.total > 0
+          ? `${((pred.high_risk / pred.total) * 100).toFixed(1)}%`
+          : "—",
+      change: `${(pred.high_risk || 0).toLocaleString()} total`,
+      up: false,
+      icon: "fa-exclamation-triangle",
+      bg: "bg-red-100",
+      text: "text-red-600",
+    },
+    {
+      label: "Avg Risk Score",
+      value:
+        pred.avg_probability != null
+          ? `${pred.avg_probability.toFixed(1)}%`
+          : "—",
+      change: "Probability",
+      up: null,
+      icon: "fa-gauge-high",
+      bg: "bg-amber-100",
+      text: "text-amber-600",
+    },
+    {
+      label: "Registered Users",
+      value:
+        stats?.users?.total != null ? stats.users.total.toLocaleString() : "—",
+      change: todayData.new_users != null ? `${todayData.new_users} today` : "",
+      up: todayData.new_users > 0 ? true : null,
+      icon: "fa-users",
+      bg: "bg-blue-100",
+      text: "text-blue-600",
+    },
+  ];
+
+  // Build trend data from API monthly_trends
+  const trendData = React.useMemo(() => {
+    const months = PERIOD_MONTHS[period] || 7;
+    const raw = stats?.monthly_trends || [];
+    const map = {};
+    raw.forEach((r) => {
+      map[r.month] = r.count;
+    });
+
+    const result = [];
+    const now = new Date();
+    for (let i = months - 1; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      result.push({ label: MONTH_NAMES[d.getMonth()], value: map[key] || 0 });
+    }
+    return result;
+  }, [stats, period]);
 
   const handleDownloadPDF = async () => {
     setExporting(true);
@@ -410,7 +395,7 @@ export default function ReportsPage() {
       <main className="space-y-8">
         {/* Summary Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {LIVE_SUMMARY.map(({ label, value, change, up, icon, bg, text }) => (
+          {summaryCards.map(({ label, value, change, up, icon, bg, text }) => (
             <div
               key={label}
               className="bg-white/80 backdrop-blur rounded-2xl p-6 border border-blue-100 shadow-md hover:shadow-lg transition-all"
@@ -449,7 +434,11 @@ export default function ReportsPage() {
             <h3 className="text-lg font-bold text-gray-800 mb-4">
               Risk Distribution
             </h3>
-            <DonutChart />
+            <DonutChart
+              low={pred.low_risk || 0}
+              moderate={pred.moderate_risk || 0}
+              high={pred.high_risk || 0}
+            />
           </div>
           <div className="bg-white/80 backdrop-blur rounded-2xl p-6 border border-blue-100 shadow-md">
             <div className="flex items-center justify-between mb-4">
@@ -547,41 +536,66 @@ export default function ReportsPage() {
             </div>
           </div>
 
-          {/* Recent Reports */}
+          {/* Recent Predictions */}
           <div className="lg:col-span-2 bg-white/80 backdrop-blur rounded-2xl p-6 border border-blue-100 shadow-md">
             <h3 className="text-lg font-bold text-gray-800 mb-4">
-              Recent Reports
+              Recent Predictions
             </h3>
-            <div className="space-y-3">
-              {RECENT_REPORTS.map((r) => (
-                <div
-                  key={r.name}
-                  className="flex items-center justify-between p-4 rounded-xl border border-gray-100 hover:bg-gray-50 transition-colors"
-                >
-                  <div className="flex items-center gap-3">
+            {recentPredictions.length === 0 ? (
+              <p className="text-sm text-gray-400 text-center py-6">
+                No predictions yet
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {recentPredictions.map((p) => {
+                  const riskColor =
+                    p.risk_level === "high"
+                      ? "bg-red-50 text-red-600"
+                      : p.risk_level === "moderate"
+                        ? "bg-yellow-50 text-yellow-600"
+                        : "bg-green-50 text-green-600";
+                  return (
                     <div
-                      className={`w-10 h-10 rounded-lg flex items-center justify-center ${r.type === "PDF" ? "bg-red-50" : "bg-green-50"}`}
+                      key={p.prediction_id}
+                      className="flex items-center justify-between p-4 rounded-xl border border-gray-100 hover:bg-gray-50 transition-colors"
                     >
-                      <i
-                        className={`fa-solid ${r.type === "PDF" ? "fa-file-pdf text-red-500" : "fa-file-excel text-green-600"}`}
-                      ></i>
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`w-10 h-10 rounded-lg flex items-center justify-center ${p.risk_level === "high" ? "bg-red-50" : p.risk_level === "moderate" ? "bg-yellow-50" : "bg-green-50"}`}
+                        >
+                          <i
+                            className={`fa-solid fa-heart-pulse ${p.risk_level === "high" ? "text-red-500" : p.risk_level === "moderate" ? "text-yellow-500" : "text-green-500"}`}
+                          ></i>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">
+                            {p.gender}, Age {p.age} — BMI {p.bmi}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {new Date(p.created_at).toLocaleDateString(
+                              "en-US",
+                              {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                              },
+                            )}
+                            {p.probability != null &&
+                              ` · ${p.probability}% probability`}
+                          </p>
+                        </div>
+                      </div>
+                      <span
+                        className={`text-xs font-semibold px-2.5 py-1 rounded-lg ${riskColor}`}
+                      >
+                        {(p.risk_level || "—").charAt(0).toUpperCase() +
+                          (p.risk_level || "").slice(1)}
+                      </span>
                     </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">
-                        {r.name}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {r.date} · {r.size}
-                      </p>
-                    </div>
-                  </div>
-                  <button className="text-primary hover:text-primary-dark text-sm font-medium flex items-center gap-1">
-                    <i className="fa-solid fa-download text-xs"></i>
-                    Download
-                  </button>
-                </div>
-              ))}
-            </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       </main>

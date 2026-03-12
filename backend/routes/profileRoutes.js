@@ -4,6 +4,7 @@ const { requireAuth, requireRole } = require("../middleware/authMiddleware");
 const {
   getHealthProfile,
   updateHealthProfile,
+  updatePhone,
 } = require("../controllers/profileController");
 
 const router = express.Router();
@@ -29,12 +30,26 @@ const healthProfileValidation = [
     .optional({ checkFalsy: true })
     .isIn(["non-smoker", "former", "current"])
     .withMessage("Invalid smoking status"),
+  body("contact_phone")
+    .optional({ checkFalsy: true })
+    .matches(/^\+?[0-9\-\s().]{6,25}$/)
+    .withMessage("Invalid contact phone number"),
 ];
 
-// GET  /api/profile/health
-router.get("/health", requireAuth, requireRole("health_user"), getHealthProfile);
+const phoneValidation = [
+  body("phone")
+    .optional({ checkFalsy: true })
+    .matches(/^\+?[0-9\-\s().]{6,25}$/)
+    .withMessage("Invalid phone number"),
+];
 
-// PUT  /api/profile/health
+router.get(
+  "/health",
+  requireAuth,
+  requireRole("health_user"),
+  getHealthProfile,
+);
+
 router.put(
   "/health",
   requireAuth,
@@ -42,5 +57,7 @@ router.put(
   healthProfileValidation,
   updateHealthProfile,
 );
+
+router.patch("/phone", requireAuth, phoneValidation, updatePhone);
 
 module.exports = router;

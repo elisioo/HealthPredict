@@ -1,10 +1,6 @@
 const { validationResult } = require("express-validator");
 const AppointmentModel = require("../models/appointmentModel");
 
-/* ------------------------------------------------------------------ */
-/* POST /api/appointments                                               */
-/* Health user books an appointment with a staff member                */
-/* ------------------------------------------------------------------ */
 const bookAppointment = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -13,14 +9,12 @@ const bookAppointment = async (req, res) => {
 
   const { staff_id, appointment_date, notes } = req.body;
 
-  // Only health_users can book; staff/admin use their own workflow
   if (req.user.role !== "health_user") {
     return res
       .status(403)
       .json({ error: "Only patients can book appointments" });
   }
 
-  // Ensure the requested date is in the future
   if (new Date(appointment_date) <= new Date()) {
     return res
       .status(400)
@@ -43,10 +37,6 @@ const bookAppointment = async (req, res) => {
   }
 };
 
-/* ------------------------------------------------------------------ */
-/* GET /api/appointments/my                                             */
-/* Returns appointments for the currently logged-in patient            */
-/* ------------------------------------------------------------------ */
 const getMyAppointments = async (req, res) => {
   try {
     const appointments = await AppointmentModel.getByUser(req.user.user_id);
@@ -57,10 +47,6 @@ const getMyAppointments = async (req, res) => {
   }
 };
 
-/* ------------------------------------------------------------------ */
-/* GET /api/appointments/staff                                          */
-/* Staff/admin: returns appointments assigned to this staff member      */
-/* ------------------------------------------------------------------ */
 const getStaffAppointments = async (req, res) => {
   try {
     const appointments = await AppointmentModel.getByStaff(req.user.user_id);
@@ -71,10 +57,6 @@ const getStaffAppointments = async (req, res) => {
   }
 };
 
-/* ------------------------------------------------------------------ */
-/* GET /api/appointments/all                                            */
-/* Admin only: returns all appointments in the system                   */
-/* ------------------------------------------------------------------ */
 const getAllAppointments = async (req, res) => {
   try {
     const appointments = await AppointmentModel.getAll();
@@ -85,10 +67,6 @@ const getAllAppointments = async (req, res) => {
   }
 };
 
-/* ------------------------------------------------------------------ */
-/* GET /api/appointments/staff-list                                     */
-/* Returns active staff available for booking                           */
-/* ------------------------------------------------------------------ */
 const getStaffList = async (req, res) => {
   try {
     const staff = await AppointmentModel.getStaffList();
@@ -99,10 +77,6 @@ const getStaffList = async (req, res) => {
   }
 };
 
-/* ------------------------------------------------------------------ */
-/* PATCH /api/appointments/:id/status                                   */
-/* Staff/admin updates status: approved | completed | cancelled         */
-/* ------------------------------------------------------------------ */
 const updateAppointmentStatus = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -122,7 +96,6 @@ const updateAppointmentStatus = async (req, res) => {
       return res.status(404).json({ error: "Appointment not found" });
     }
 
-    // Staff can only update their own appointments; admin can update any
     if (
       req.user.role === "staff" &&
       appointment.staff_id !== req.user.user_id
@@ -130,7 +103,6 @@ const updateAppointmentStatus = async (req, res) => {
       return res.status(403).json({ error: "Not your appointment" });
     }
 
-    // Patients can only cancel their own pending appointments
     if (req.user.role === "health_user") {
       if (appointment.user_id !== req.user.user_id) {
         return res.status(403).json({ error: "Not your appointment" });

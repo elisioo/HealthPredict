@@ -33,6 +33,8 @@ export const authApi = {
   updateStatus: (status) => API.patch("/auth/status", { status }),
   forgotPassword: (email) => API.post("/auth/forgot-password", { email }),
   resetPassword: (data) => API.post("/auth/reset-password", data),
+  deleteAccount: (password) =>
+    API.delete("/auth/account", { data: { password } }),
 };
 
 export const messageApi = {
@@ -51,6 +53,7 @@ export const predictionApi = {
 export const profileApi = {
   getHealthProfile: () => API.get("/profile/health"),
   updateHealthProfile: (data) => API.put("/profile/health", data),
+  updatePhone: (phone) => API.patch("/profile/phone", { phone }),
 };
 
 export const appointmentApi = {
@@ -83,6 +86,20 @@ export const adminApi = {
   deleteAdminMessage: (msgId) => API.delete(`/admin/messages/${msgId}`),
   deleteAdminThread: (u1, u2) =>
     API.delete(`/admin/messages/thread/${u1}/${u2}`),
+};
+
+export const staffApi = {
+  getDashboard: () => API.get("/staff/dashboard"),
+  getPatients: (params) => API.get("/staff/patients", { params }),
+  addPatient: (data) => API.post("/staff/patients", data),
+  // Teams
+  getMyTeam: () => API.get("/staff/teams/my"),
+  getTeams: () => API.get("/staff/teams"),
+  getTeam: (id) => API.get(`/staff/teams/${id}`),
+  createTeam: (data) => API.post("/staff/teams", data),
+  updateTeam: (id, data) => API.put(`/staff/teams/${id}`, data),
+  deleteTeam: (id) => API.delete(`/staff/teams/${id}`),
+  getUnassignedStaff: () => API.get("/staff/teams/unassigned"),
 };
 
 export default API;

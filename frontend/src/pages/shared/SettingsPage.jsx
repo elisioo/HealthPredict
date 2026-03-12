@@ -2,10 +2,12 @@ import React, { useState } from "react";
 import DashboardLayout from "../../components/DashboardLayout";
 import { NAV_BY_ROLE } from "../../components/navConfig";
 import { useAuth } from "../../context/AuthContext";
+import { useToast } from "../../context/ToastContext";
 import { authApi } from "../../api/authApi";
 
 export default function SettingsPage() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const { showToast } = useToast();
   const role = user?.role;
   const navKey = role === "health_user" ? "patient" : role;
   const navItems = NAV_BY_ROLE[navKey] ?? NAV_BY_ROLE.patient;
@@ -16,6 +18,11 @@ export default function SettingsPage() {
   );
   const [savingStatus, setSavingStatus] = useState(false);
   const [statusMsg, setStatusMsg] = useState("");
+
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleteError, setDeleteError] = useState("");
+  const [deleting, setDeleting] = useState(false);
 
   const handleAvailabilityToggle = async (newStatus) => {
     if (savingStatus || newStatus === availability) return;
@@ -30,6 +37,26 @@ export default function SettingsPage() {
       setStatusMsg("Failed to update status. Please try again.");
     } finally {
       setSavingStatus(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!deletePassword.trim()) {
+      setDeleteError("Please enter your password.");
+      return;
+    }
+    setDeleting(true);
+    setDeleteError("");
+    try {
+      const { data } = await authApi.deleteAccount(deletePassword);
+      showToast(data.message, "success", 6000);
+      await logout();
+    } catch (err) {
+      setDeleteError(
+        err.response?.data?.error || "Failed to delete account.",
+      );
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -130,12 +157,92 @@ export default function SettingsPage() {
               Change Password
             </button>
             <br />
-            <button className="text-sm text-red-500 hover:text-red-700 font-medium">
-              Delete Account
+            <button
+              onClick={() => {
+                setShowDeleteModal(true);
+                setDeletePassword("");
+                setDeleteError("");
+              }}
+              className="text-sm text-red-500 hover:text-red-700 font-medium"
+            >
+              {role === "staff" ? "Request Account Deletion" : "Delete Account"}
             </button>
           </div>
         </div>
       </div>
+
+      {showDeleteModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !deleting)
+              setShowDeleteModal(false);
+          }}
+        >
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 animate-fade-in">
+            <div className="w-12 h-12 rounded-full flex items-center justify-center mb-4 mx-auto bg-red-100">
+              <i className="fa fa-triangle-exclamation text-xl text-red-600" />
+            </div>
+
+            <h3 className="text-lg font-bold text-slate-800 text-center mb-1">
+              {role === "staff"
+                ? "Request Account Deletion"
+                : "Delete Account"}
+            </h3>
+
+            <p className="text-sm text-slate-500 text-center mb-4 leading-relaxed">
+              {role === "staff"
+                ? "Your account will be deactivated immediately and permanently deleted after 5 working days. This cannot be undone."
+                : "This will permanently delete your account and all associated data. This action cannot be undone."}
+            </p>
+
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Confirm your password
+            </label>
+            <input
+              type="password"
+              value={deletePassword}
+              onChange={(e) => setDeletePassword(e.target.value)}
+              placeholder="Enter your password"
+              className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-400 mb-1"
+              disabled={deleting}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleDeleteAccount();
+              }}
+            />
+
+            {deleteError && (
+              <p className="text-xs text-red-500 mb-2">{deleteError}</p>
+            )}
+
+            <div className="flex gap-3 mt-4">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                disabled={deleting}
+                className="flex-1 py-2.5 text-sm rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-50 disabled:opacity-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteAccount}
+                disabled={deleting}
+                className="flex-1 py-2.5 text-sm rounded-xl font-semibold text-white bg-red-600 hover:bg-red-700 disabled:opacity-60 transition-colors"
+              >
+                {deleting ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <i className="fa fa-circle-notch fa-spin text-xs" />{" "}
+                    Processing…
+                  </span>
+                ) : role === "staff" ? (
+                  "Submit Resignation"
+                ) : (
+                  "Delete My Account"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   );
 }

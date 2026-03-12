@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import DashboardLayout from "../../components/DashboardLayout";
 import { NAV_BY_ROLE } from "../../components/navConfig";
 import { useAuth } from "../../context/AuthContext";
+import downloadPredictionPDF from "../../utils/downloadPredictionPDF";
 
 // Risk configuration by level
 const riskConfig = {
@@ -178,6 +179,20 @@ function ResultPage() {
 
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <button
+                  onClick={() =>
+                    downloadPredictionPDF({
+                      riskLevel,
+                      probability,
+                      diabetesResult,
+                      patientName: user?.fullName || "",
+                    })
+                  }
+                  className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-8 rounded-xl transition-colors flex items-center justify-center gap-2"
+                >
+                  <i className="fa-solid fa-file-pdf"></i>
+                  Download PDF
+                </button>
                 <button
                   onClick={() => navigate("/prediction")}
                   className="w-full sm:w-auto bg-primary hover:bg-primary-dark text-white font-medium py-3 px-8 rounded-xl transition-colors flex items-center justify-center gap-2"

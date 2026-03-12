@@ -9,15 +9,12 @@ const {
   updateStatus,
   forgotPassword,
   resetPassword,
+  deleteAccount,
 } = require("../controllers/authController");
 const { requireAuth } = require("../middleware/authMiddleware");
 const { authLimiter } = require("../middleware/rateLimitMiddleware");
 
 const router = express.Router();
-
-/* ------------------------------------------------------------------ */
-/* Validation rules                                                     */
-/* ------------------------------------------------------------------ */
 
 const registerValidation = [
   body("firstName")
@@ -25,20 +22,26 @@ const registerValidation = [
     .notEmpty()
     .withMessage("First name is required")
     .isLength({ max: 250 })
-    .withMessage("First name too long"),
+    .withMessage("First name too long")
+    .matches(/^[a-zA-Z\u00C0-\u024F\u1E00-\u1EFF\s'.,-]+$/)
+    .withMessage("First name contains invalid characters"),
 
   body("lastName")
     .trim()
     .notEmpty()
     .withMessage("Last name is required")
     .isLength({ max: 250 })
-    .withMessage("Last name too long"),
+    .withMessage("Last name too long")
+    .matches(/^[a-zA-Z\u00C0-\u024F\u1E00-\u1EFF\s'.,-]+$/)
+    .withMessage("Last name contains invalid characters"),
 
   body("mi")
     .optional({ checkFalsy: true })
     .trim()
     .isLength({ max: 1 })
-    .withMessage("Middle initial must be a single character"),
+    .withMessage("Middle initial must be a single character")
+    .isAlpha()
+    .withMessage("Middle initial must be a letter"),
 
   body("email")
     .trim()
@@ -99,29 +102,18 @@ const resetPasswordValidation = [
     .withMessage("Password must contain a special character"),
 ];
 
-/* ------------------------------------------------------------------ */
-/* Routes                                                               */
-/* ------------------------------------------------------------------ */
-
-// POST /api/auth/register
 router.post("/register", authLimiter, registerValidation, register);
 
-// POST /api/auth/login
 router.post("/login", authLimiter, loginValidation, login);
 
-// GET  /api/auth/me  (protected)
 router.get("/me", requireAuth, getMe);
 
-// POST /api/auth/logout (auth optional — works even if token is expired)
 router.post("/logout", logout);
 
-// POST /api/auth/refresh
 router.post("/refresh", refresh);
 
-// PATCH /api/auth/status  (staff only)
 router.patch("/status", requireAuth, updateStatus);
 
-// POST /api/auth/forgot-password
 router.post(
   "/forgot-password",
   authLimiter,
@@ -129,12 +121,22 @@ router.post(
   forgotPassword,
 );
 
-// POST /api/auth/reset-password
 router.post(
   "/reset-password",
   authLimiter,
   resetPasswordValidation,
   resetPassword,
+);
+
+const deleteAccountValidation = [
+  body("password").notEmpty().withMessage("Password is required"),
+];
+
+router.delete(
+  "/account",
+  requireAuth,
+  deleteAccountValidation,
+  deleteAccount,
 );
 
 module.exports = router;

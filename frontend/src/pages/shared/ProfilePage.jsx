@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import PhoneInput from "react-phone-input-2";
+import "react-phone-input-2/lib/style.css";
 import DashboardLayout from "../../components/DashboardLayout";
 import { NAV_BY_ROLE } from "../../components/navConfig";
 import { useAuth } from "../../context/AuthContext";
@@ -22,6 +24,7 @@ const EMPTY_FORM = {
   height_cm: "",
   weight_kg: "",
   smoking_status: "",
+  contact_phone: "",
 };
 
 function isProfileComplete(p) {
@@ -39,7 +42,7 @@ function calcBmi(height_cm, weight_kg) {
   const h = parseFloat(height_cm);
   const w = parseFloat(weight_kg);
   if (!h || !w || h <= 0) return "";
-  return (w / ((h / 100) ** 2)).toFixed(1);
+  return (w / (h / 100) ** 2).toFixed(1);
 }
 
 function bmiCategory(bmi) {
@@ -52,7 +55,7 @@ function bmiCategory(bmi) {
 }
 
 export default function ProfilePage() {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const [profile, setProfile] = useState(null);
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
@@ -61,6 +64,17 @@ export default function ProfilePage() {
   const [saveError, setSaveError] = useState("");
   const [saveSuccess, setSaveSuccess] = useState("");
   const [loading, setLoading] = useState(true);
+
+  // Phone number editing state
+  const [phoneValue, setPhoneValue] = useState("");
+  const [phoneEditing, setPhoneEditing] = useState(false);
+  const [phoneSaving, setPhoneSaving] = useState(false);
+  const [phoneError, setPhoneError] = useState("");
+  const [phoneSuccess, setPhoneSuccess] = useState("");
+
+  useEffect(() => {
+    setPhoneValue(user?.phone || "");
+  }, [user?.phone]);
 
   useEffect(() => {
     profileApi
@@ -76,6 +90,7 @@ export default function ProfilePage() {
             height_cm: data.profile.height_cm ?? "",
             weight_kg: data.profile.weight_kg ?? "",
             smoking_status: data.profile.smoking_status || "",
+            contact_phone: data.profile.contact_phone || "",
           });
         }
       })
@@ -105,12 +120,33 @@ export default function ProfilePage() {
         height_cm: profile.height_cm ?? "",
         weight_kg: profile.weight_kg ?? "",
         smoking_status: profile.smoking_status || "",
+        contact_phone: profile.contact_phone || "",
       });
     } else {
       setForm(EMPTY_FORM);
     }
     setSaveError("");
     setEditing(false);
+  };
+
+  const handlePhoneSave = async () => {
+    setPhoneSaving(true);
+    setPhoneError("");
+    setPhoneSuccess("");
+    try {
+      await profileApi.updatePhone(phoneValue.trim());
+      await refreshUser(); // sync AuthContext + localStorage with fresh DB value      setPhoneSuccess("Phone number updated.");
+      setPhoneEditing(false);
+    } catch (err) {
+      const msgs = err.response?.data?.errors;
+      setPhoneError(
+        msgs?.length
+          ? msgs.map((e) => e.msg).join(" • ")
+          : err.response?.data?.error || "Failed to update phone.",
+      );
+    } finally {
+      setPhoneSaving(false);
+    }
   };
 
   const handleSave = async () => {
@@ -149,7 +185,6 @@ export default function ProfilePage() {
       subtitle="Manage your account and health information"
     >
       <div className="max-w-2xl space-y-6">
-
         {/* ── Account Info Card ─────────────────────────────── */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-5">
           <div className="flex items-center justify-between">
@@ -181,12 +216,84 @@ export default function ProfilePage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
             <div>
-              <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Email</p>
-              <p className="text-sm font-medium text-gray-900">{user?.email || "—"}</p>
+              <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">
+                Email
+              </p>
+              <p className="text-sm font-medium text-gray-900">
+                {user?.email || "—"}
+              </p>
             </div>
             <div>
-              <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Phone</p>
-              <p className="text-sm font-medium text-gray-900">{user?.phone || "Not set"}</p>
+              <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">
+                Phone
+              </p>
+              {phoneEditing ? (
+                <div className="space-y-2">
+                  <PhoneInput
+                    country="ph"
+                    value={phoneValue}
+                    onChange={(val) => setPhoneValue("+" + val)}
+                    inputStyle={{
+                      width: "100%",
+                      height: "38px",
+                      fontSize: "14px",
+                      borderRadius: "12px",
+                      border: "1px solid #e2e8f0",
+                    }}
+                    buttonStyle={{
+                      borderRadius: "12px 0 0 12px",
+                      border: "1px solid #e2e8f0",
+                      borderRight: "none",
+                    }}
+                    dropdownStyle={{ fontSize: "13px" }}
+                    enableSearch
+                    searchPlaceholder="Search country..."
+                  />
+                  {phoneError && (
+                    <p className="text-xs text-red-500">{phoneError}</p>
+                  )}
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handlePhoneSave}
+                      disabled={phoneSaving}
+                      className="flex-1 bg-primary text-white py-1.5 rounded-xl text-xs font-medium hover:bg-primary/90 transition-colors disabled:opacity-60"
+                    >
+                      {phoneSaving ? "Saving..." : "Save"}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setPhoneEditing(false);
+                        setPhoneError("");
+                        setPhoneValue(user?.phone || "");
+                      }}
+                      disabled={phoneSaving}
+                      className="flex-1 border border-slate-200 text-slate-700 py-1.5 rounded-xl text-xs font-medium hover:bg-slate-50 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-medium text-gray-900">
+                    {phoneValue || "Not set"}
+                  </p>
+                  {phoneSuccess && (
+                    <span className="text-xs text-green-600 font-medium">
+                      {phoneSuccess}
+                    </span>
+                  )}
+                  <button
+                    onClick={() => {
+                      setPhoneEditing(true);
+                      setPhoneSuccess("");
+                    }}
+                    className="text-xs text-primary hover:underline ml-auto"
+                  >
+                    <i className="fa-solid fa-pen-to-square mr-1"></i>Edit
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -335,7 +442,9 @@ export default function ProfilePage() {
                     className="block w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50 text-slate-500"
                   />
                   {bmi && (
-                    <span className={`text-sm font-semibold whitespace-nowrap ${bmiMeta.color}`}>
+                    <span
+                      className={`text-sm font-semibold whitespace-nowrap ${bmiMeta.color}`}
+                    >
                       {bmiMeta.label}
                     </span>
                   )}
@@ -371,6 +480,43 @@ export default function ProfilePage() {
                 </div>
               </div>
 
+              {/* Contact Phone */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Contact Phone{" "}
+                  <span className="text-xs text-slate-400 font-normal">
+                    (optional)
+                  </span>
+                </label>
+                <PhoneInput
+                  country="ph"
+                  value={
+                    form.contact_phone
+                      ? form.contact_phone.replace(/^\+/, "")
+                      : ""
+                  }
+                  onChange={(val) => set("contact_phone", val ? "+" + val : "")}
+                  inputStyle={{
+                    width: "100%",
+                    height: "40px",
+                    fontSize: "14px",
+                    borderRadius: "12px",
+                    border: "1px solid #e2e8f0",
+                  }}
+                  buttonStyle={{
+                    borderRadius: "12px 0 0 12px",
+                    border: "1px solid #e2e8f0",
+                    borderRight: "none",
+                  }}
+                  dropdownStyle={{ fontSize: "13px" }}
+                  enableSearch
+                  searchPlaceholder="Search country..."
+                />
+                <p className="text-xs text-slate-400 mt-1">
+                  Stored encrypted — not visible to others.
+                </p>
+              </div>
+
               {/* Actions */}
               <div className="flex gap-3 pt-2">
                 <button
@@ -379,7 +525,10 @@ export default function ProfilePage() {
                   className="flex-1 bg-primary text-white py-2.5 rounded-xl text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-60"
                 >
                   {saving ? (
-                    <><i className="fa-solid fa-spinner fa-spin mr-2"></i>Saving...</>
+                    <>
+                      <i className="fa-solid fa-spinner fa-spin mr-2"></i>
+                      Saving...
+                    </>
                   ) : (
                     "Save Health Profile"
                   )}
@@ -397,54 +546,83 @@ export default function ProfilePage() {
             /* ── Read-only View ─────────────────────────────── */
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Date of Birth</p>
+                <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">
+                  Date of Birth
+                </p>
                 <p className="text-sm font-medium text-gray-900">
                   {profile.date_of_birth
-                    ? new Date(profile.date_of_birth).toLocaleDateString("en-US", {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                      })
+                    ? new Date(profile.date_of_birth).toLocaleDateString(
+                        "en-US",
+                        {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                        },
+                      )
                     : "—"}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Gender</p>
+                <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">
+                  Gender
+                </p>
                 <p className="text-sm font-medium text-gray-900 capitalize">
                   {profile.gender || "—"}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Height</p>
+                <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">
+                  Height
+                </p>
                 <p className="text-sm font-medium text-gray-900">
                   {profile.height_cm ? `${profile.height_cm} cm` : "—"}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Weight</p>
+                <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">
+                  Weight
+                </p>
                 <p className="text-sm font-medium text-gray-900">
                   {profile.weight_kg ? `${profile.weight_kg} kg` : "—"}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">BMI</p>
+                <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">
+                  BMI
+                </p>
                 <p className="text-sm font-medium text-gray-900">
                   {profile.bmi ? (
                     <>
                       {profile.bmi}{" "}
-                      <span className={`text-xs font-semibold ${bmiCategory(profile.bmi).color}`}>
+                      <span
+                        className={`text-xs font-semibold ${bmiCategory(profile.bmi).color}`}
+                      >
                         ({bmiCategory(profile.bmi).label})
                       </span>
                     </>
-                  ) : "—"}
+                  ) : (
+                    "—"
+                  )}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Smoking Status</p>
+                <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">
+                  Smoking Status
+                </p>
                 <p className="text-sm font-medium text-gray-900 capitalize">
                   {profile.smoking_status
-                    ? SMOKING_OPTS.find((o) => o.value === profile.smoking_status)?.label
+                    ? SMOKING_OPTS.find(
+                        (o) => o.value === profile.smoking_status,
+                      )?.label
                     : "—"}
+                </p>
+              </div>
+              <div className="sm:col-span-2">
+                <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">
+                  Contact Phone
+                </p>
+                <p className="text-sm font-medium text-gray-900">
+                  {profile.contact_phone || "—"}
                 </p>
               </div>
             </div>
@@ -454,9 +632,12 @@ export default function ProfilePage() {
               <div className="w-12 h-12 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-3">
                 <i className="fa-solid fa-file-medical text-amber-500 text-xl"></i>
               </div>
-              <p className="text-sm font-medium text-gray-700">No health profile yet</p>
+              <p className="text-sm font-medium text-gray-700">
+                No health profile yet
+              </p>
               <p className="text-xs text-gray-400 mt-1">
-                Click "Complete Profile" above to fill in your health details and get verified.
+                Click "Complete Profile" above to fill in your health details
+                and get verified.
               </p>
             </div>
           )}

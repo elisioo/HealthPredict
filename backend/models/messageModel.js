@@ -1,7 +1,7 @@
 const db = require("../database/db");
 
 const MessageModel = {
-  /** Send a message */
+
   async create({ sender_id, receiver_id, message }) {
     const [result] = await db.query(
       "INSERT INTO messages (sender_id, receiver_id, message) VALUES (?, ?, ?)",
@@ -10,10 +10,9 @@ const MessageModel = {
     return result.insertId;
   },
 
-  /** Get a message by id */
   async findById(id) {
     const [rows] = await db.query(
-      `SELECT m.*, 
+      `SELECT m.*,
         s.full_name AS sender_name, s.role AS sender_role,
         r.full_name AS receiver_name, r.role AS receiver_role
        FROM messages m
@@ -25,10 +24,6 @@ const MessageModel = {
     return rows[0] || null;
   },
 
-  /**
-   * Get conversation thread between two users (both directions),
-   * ordered oldest first.
-   */
   async getConversation(userId, otherId) {
     const [rows] = await db.query(
       `SELECT m.*,
@@ -43,10 +38,6 @@ const MessageModel = {
     return rows;
   },
 
-  /**
-   * Get the list of unique contacts (people the user has messaged or received from),
-   * with the latest message and unread count for each.
-   */
   async getInbox(userId) {
     const [rows] = await db.query(
       `SELECT
@@ -73,7 +64,6 @@ const MessageModel = {
     return rows;
   },
 
-  /** Get list of available healthcare staff the patient can message */
   async getStaffList() {
     const [rows] = await db.query(
       "SELECT user_id, full_name, role FROM users WHERE role = 'staff' AND is_active = 1 AND availability_status = 'available' ORDER BY full_name ASC",
@@ -81,7 +71,6 @@ const MessageModel = {
     return rows;
   },
 
-  /** Mark all messages in a conversation as read */
   async markRead(receiverId, senderId) {
     await db.query(
       "UPDATE messages SET is_read = 1 WHERE receiver_id = ? AND sender_id = ? AND is_read = 0",
@@ -89,7 +78,6 @@ const MessageModel = {
     );
   },
 
-  /** Unread count for a user */
   async unreadCount(userId) {
     const [rows] = await db.query(
       "SELECT COUNT(*) AS count FROM messages WHERE receiver_id = ? AND is_read = 0",
